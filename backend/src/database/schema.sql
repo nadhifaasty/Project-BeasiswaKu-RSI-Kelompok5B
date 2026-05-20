@@ -204,6 +204,6 @@ create policy "Users can insert own applications"
 -- SEED DATA (program beasiswa)
 -- ============================================
 insert into public.scholarship_programs (nama, deskripsi, nominal, deadline, kuota, sisa_kuota) values
-  ('Beasiswa SMA', 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.', 'Rp 500.000 / bulan', '2026-01-25', 50, 50),
-  ('Beasiswa Perguruan Tinggi', 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.', 'Rp 750.000 / bulan', '2026-01-25', 100, 100)
+  ('Beasiswa SMA', 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.', 'Rp 750.000 / bulan', '2026-01-25', 50, 50),
+  ('Beasiswa Perguruan Tinggi', 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.', 'Rp 1.000.000 / bulan', '2026-01-25', 100, 100)
 on conflict do nothing;
