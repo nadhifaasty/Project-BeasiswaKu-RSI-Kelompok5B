@@ -1,11 +1,17 @@
 import { Router } from 'express';
 import { healthCheck } from '../controllers';
 import { supabaseAdmin } from '../config/supabase';
+import authRoutes from './auth.routes';
 
 const router = Router();
 
+// Health check
 router.get('/health', healthCheck);
 
+// Auth routes
+router.use('/auth', authRoutes);
+
+// Supabase connection test
 router.get('/supabase-test', async (_req, res) => {
   try {
     const { data, error } = await supabaseAdmin.from('scholarship_programs').select('*');
