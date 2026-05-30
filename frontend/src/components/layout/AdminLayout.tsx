@@ -15,26 +15,26 @@ function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar - Fixed Left */}
+    <div className="flex h-screen overflow-hidden bg-secondary">
+      {/* Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      {/* Main Area - Right Side */}
+      {/* Main Area */}
       <div
         className={`flex flex-1 flex-col transition-all duration-300 ${
-          sidebarCollapsed ? 'ml-16' : 'ml-64'
+          sidebarCollapsed ? 'ml-16' : 'ml-60'
         }`}
       >
-        {/* Header - Sticky Top */}
+        {/* Header */}
         <AdminHeader
           user={currentUser}
           onLogout={logout}
         />
 
-        {/* Main Content - Scrollable */}
+        {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>

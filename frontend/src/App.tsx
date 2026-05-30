@@ -1,12 +1,16 @@
 import { Routes, Route } from 'react-router-dom'
 import PublicLayout from './layouts/PublicLayout'
 import { ProtectedRoute } from './components'
-import { AdminLayout } from './components/layout'
+import { AdminLayout, SiswaLayout } from './components/layout'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import VerifikasiEmailPage from './pages/VerifikasiEmailPage'
 import DashboardPage from './pages/DashboardPage'
+import BiodataPage from './pages/BiodataPage'
+import PengajuanPage from './pages/PengajuanPage'
+import AdminDashboardPage from './pages/AdminDashboardPage'
+import AdminPengajuanPage from './pages/AdminPengajuanPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 function App() {
@@ -21,22 +25,20 @@ function App() {
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 
-      {/* Protected: Siswa Routes */}
+      {/* Protected: Siswa Routes (with Siswa Sidebar Layout) */}
       <Route element={<ProtectedRoute allowedRoles={['siswa', 'admin', 'super_admin']} />}>
-        <Route element={<PublicLayout />}>
+        <Route element={<SiswaLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/biodata" element={<BiodataPage />} />
+          <Route path="/pengajuan" element={<PengajuanPage />} />
         </Route>
       </Route>
 
       {/* Protected: Admin & Super Admin Routes */}
       <Route element={<ProtectedRoute allowedRoles={['admin', 'super_admin']} />}>
         <Route element={<AdminLayout />}>
-          <Route path="/admin/dashboard" element={<DashboardPage />} />
-          {/* Tambahkan route admin lainnya di sini */}
-          {/* <Route path="/admin/pengajuan" element={<PengajuanPage />} /> */}
-          {/* <Route path="/admin/parameter-seleksi" element={<ParameterSeleksiPage />} /> */}
-          {/* <Route path="/admin/audit-log" element={<AuditLogPage />} /> */}
-          {/* <Route path="/admin/evaluasi" element={<EvaluasiPage />} /> */}
+          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          <Route path="/admin/pengajuan" element={<AdminPengajuanPage />} />
         </Route>
       </Route>
     </Routes>

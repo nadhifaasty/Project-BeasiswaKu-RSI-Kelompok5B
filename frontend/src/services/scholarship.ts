@@ -1,0 +1,79 @@
+import { fetchApi } from './api'
+
+// ============ TYPES ============
+
+export interface ScholarshipProgram {
+  id: string
+  nama: string
+  deskripsi: string
+  nominal: string
+  deadline: string
+  kuota: number
+  sisa_kuota: number
+  status: 'aktif' | 'ditutup'
+  created_at: string
+}
+
+export interface Application {
+  id: string
+  user_id: string
+  program_id: string
+  nomor_referensi: string
+  ipk: number
+  esai_motivasi: string
+  prestasi_non_akademik: string | null
+  status: 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
+  skor_kelayakan: number | null
+  catatan_admin: string | null
+  created_at: string
+  updated_at: string
+  scholarship_programs?: {
+    nama: string
+    nominal: string
+    deadline: string
+    status: string
+  }
+}
+
+export interface CreateApplicationPayload {
+  program_id: string
+  ipk: number
+  esai_motivasi: string
+  prestasi_non_akademik?: string
+}
+
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
+
+// ============ API CALLS ============
+
+export async function getPrograms(): Promise<ScholarshipProgram[]> {
+  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/scholarship/programs')
+  return res.data
+}
+
+export async function getProgramById(id: string): Promise<ScholarshipProgram> {
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/scholarship/programs/${id}`)
+  return res.data
+}
+
+export async function getUserApplications(): Promise<Application[]> {
+  const res = await fetchApi<ApiResponse<Application[]>>('/scholarship/applications')
+  return res.data
+}
+
+export async function getApplicationById(id: string): Promise<Application> {
+  const res = await fetchApi<ApiResponse<Application>>(`/scholarship/applications/${id}`)
+  return res.data
+}
+
+export async function createApplication(payload: CreateApplicationPayload): Promise<Application> {
+  const res = await fetchApi<ApiResponse<Application>>('/scholarship/applications', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return res.data
+}

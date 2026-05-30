@@ -70,7 +70,7 @@ function LoginPage() {
 
       {/* Right Panel - Login Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center px-4 py-12">
-        <div className="bg-white rounded-xl p-8 shadow-sm border w-full max-w-md">
+        <div className="bg-white rounded-2xl p-8 shadow-xl w-full max-w-md">
           <h1 className="text-3xl font-bold text-primary mb-2">Masuk Akun</h1>
           <p className="text-gray-500 mb-8 text-sm">Silakan masukkan detail akun kamu.</p>
 

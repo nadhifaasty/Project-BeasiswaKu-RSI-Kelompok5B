@@ -10,7 +10,7 @@ function UnauthorizedPage() {
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-secondary px-4">
-      <div className="bg-white rounded-xl p-8 shadow-sm border text-center max-w-md w-full">
+      <div className="bg-white rounded-2xl p-8 shadow-xl text-center max-w-md w-full">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />

@@ -8,5 +8,5 @@ export { Table, Badge, TableSkeleton, Pagination, ProtectedRoute } from './share
 export type { Column, TableProps, SortDirection, BadgeProps, BadgeStatus, TableSkeletonProps, PaginationProps, ProtectedRouteProps } from './shared'
 
 // Layout Components
-export { AdminLayout, Sidebar, AdminHeader } from './layout'
-export type { SidebarProps, NavItem, AdminHeaderProps, UserInfo } from './layout'
+export { AdminLayout, Sidebar, AdminHeader, SiswaLayout, SiswaSidebar } from './layout'
+export type { SidebarProps, NavItem, AdminHeaderProps, UserInfo, SiswaSidebarProps } from './layout'

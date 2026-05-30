@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { healthCheck } from '../controllers';
 import { supabaseAdmin } from '../config/supabase';
 import authRoutes from './auth.routes';
+import biodataRoutes from './biodata.routes';
+import scholarshipRoutes from './scholarship.routes';
+import documentRoutes from './document.routes';
 
 const router = Router();
 
@@ -10,6 +13,15 @@ router.get('/health', healthCheck);
 
 // Auth routes
 router.use('/auth', authRoutes);
+
+// Biodata routes
+router.use('/biodata', biodataRoutes);
+
+// Scholarship routes
+router.use('/scholarship', scholarshipRoutes);
+
+// Document routes
+router.use('/documents', documentRoutes);
 
 // Supabase connection test
 router.get('/supabase-test', async (_req, res) => {

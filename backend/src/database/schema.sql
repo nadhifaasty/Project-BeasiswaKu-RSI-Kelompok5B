@@ -25,6 +25,10 @@ create table if not exists public.biodata_pribadi (
   nim_nisn text not null,
   email text not null,
   nomor_hp text not null,
+  tempat_lahir text,
+  tanggal_lahir date,
+  jenis_kelamin text check (jenis_kelamin in ('Laki-laki', 'Perempuan')),
+  agama text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -35,6 +39,8 @@ create table if not exists public.biodata_alamat (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade unique not null,
   alamat text not null,
+  rt_rw text,
+  kelurahan text,
   provinsi text not null,
   kota text not null,
   kecamatan text not null,
@@ -207,3 +213,15 @@ insert into public.scholarship_programs (nama, deskripsi, nominal, deadline, kuo
   ('Beasiswa SMA', 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.', 'Rp 750.000 / bulan', '2026-01-25', 50, 50),
   ('Beasiswa Perguruan Tinggi', 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.', 'Rp 1.000.000 / bulan', '2026-01-25', 100, 100)
 on conflict do nothing;
+
+-- ============================================
+-- MIGRATION: Tambahan kolom biodata (untuk DB yang sudah ada)
+-- Aman dijalankan berulang kali (idempotent).
+-- ============================================
+alter table public.biodata_pribadi add column if not exists tempat_lahir text;
+alter table public.biodata_pribadi add column if not exists tanggal_lahir date;
+alter table public.biodata_pribadi add column if not exists jenis_kelamin text;
+alter table public.biodata_pribadi add column if not exists agama text;
+
+alter table public.biodata_alamat add column if not exists rt_rw text;
+alter table public.biodata_alamat add column if not exists kelurahan text;

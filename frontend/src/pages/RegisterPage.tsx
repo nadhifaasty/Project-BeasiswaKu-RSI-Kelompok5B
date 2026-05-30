@@ -122,7 +122,7 @@ function RegisterPage() {
 
       {/* Right Panel - Register Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center px-4 py-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border w-full max-w-lg">
+        <div className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-lg">
           <h1 className="text-2xl font-bold text-primary mb-1 text-center">Buat Akun</h1>
           <p className="text-gray-500 text-center mb-4 text-sm">Lengkapi data di bawah untuk memulai pendaftaran.</p>
 
