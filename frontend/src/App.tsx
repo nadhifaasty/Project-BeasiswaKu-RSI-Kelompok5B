@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import PublicLayout from './layouts/PublicLayout'
 import { ProtectedRoute } from './components'
-import { AdminLayout, SiswaLayout } from './components/layout'
+import { AdminLayout, SiswaLayout, SuperAdminLayout } from './components/layout'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -11,6 +11,7 @@ import BiodataPage from './pages/BiodataPage'
 import PengajuanPage from './pages/PengajuanPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPengajuanPage from './pages/AdminPengajuanPage'
+import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 function App() {
@@ -39,6 +40,13 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/pengajuan" element={<AdminPengajuanPage />} />
+        </Route>
+      </Route>
+
+      {/* Protected: Super Admin Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+        <Route element={<SuperAdminLayout />}>
+          <Route path="/superadmin/dashboard" element={<SuperAdminDashboardPage />} />
         </Route>
       </Route>
     </Routes>

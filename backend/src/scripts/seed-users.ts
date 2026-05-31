@@ -56,35 +56,57 @@ async function seed() {
         },
       });
 
+      let userId: string;
+
       if (authError) {
-        // If user already exists, skip
+        // If user already exists, fetch existing id and backfill data
         if (authError.message.includes('already been registered')) {
-          console.log(`⏭️  ${user.email} (${user.role}) - sudah ada, skip.`);
-          continue;
+          const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+          const existing = list?.users.find((u) => u.email === user.email);
+          if (!existing) {
+            console.log(`⏭️  ${user.email} (${user.role}) - sudah ada tapi tidak ditemukan, skip.`);
+            continue;
+          }
+          userId = existing.id;
+          console.log(`♻️  ${user.email} (${user.role}) - sudah ada, backfill data...`);
+        } else {
+          throw authError;
         }
-        throw authError;
+      } else {
+        userId = authData.user.id;
       }
 
-      const userId = authData.user.id;
-
-      // 2. Insert profile
+      // 2. Upsert profile
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .insert({
+        .upsert({
           id: userId,
           nama_lengkap: user.nama_lengkap,
           nim_nisn: user.nim_nisn,
           nomor_hp: user.nomor_hp,
           email: user.email,
           role: user.role,
-          biodata_progress: 0,
-        });
+          biodata_progress: 25, // Data Pribadi auto-filled
+        }, { onConflict: 'id' });
 
       if (profileError) {
         console.error(`❌ ${user.email} - Profile error: ${profileError.message}`);
-        // Cleanup auth user
-        await supabaseAdmin.auth.admin.deleteUser(userId);
         continue;
+      }
+
+      // 3. Pre-fill biodata_pribadi (data dari registrasi)
+      const { error: biodataError } = await supabaseAdmin
+        .from('biodata_pribadi')
+        .upsert({
+          user_id: userId,
+          nama_lengkap: user.nama_lengkap,
+          nim_nisn: user.nim_nisn,
+          email: user.email,
+          nomor_hp: user.nomor_hp,
+        }, { onConflict: 'user_id' });
+
+      if (biodataError) {
+        console.error(`⚠️  ${user.email} - Biodata warning: ${biodataError.message}`);
       }
 
       console.log(`✅ ${user.email} (${user.role}) - berhasil dibuat!`);

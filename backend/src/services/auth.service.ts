@@ -76,13 +76,30 @@ class AuthService {
         nomor_hp,
         email,
         role: 'siswa',
-        biodata_progress: 0,
+        biodata_progress: 25, // Data Pribadi auto-filled from registration
       });
 
     if (profileError) {
       // Rollback: delete the auth user if profile insert fails
       await supabaseAdmin.auth.admin.deleteUser(userId);
       throw new Error(`Gagal menyimpan profil: ${profileError.message}`);
+    }
+
+    // 4b. Pre-fill biodata_pribadi with data collected during registration
+    // (Nama, NIM/NISN, Email, Nomor HP) so "Data Pribadi" is partially filled
+    const { error: biodataError } = await supabaseAdmin
+      .from('biodata_pribadi')
+      .insert({
+        user_id: userId,
+        nama_lengkap,
+        nim_nisn,
+        email,
+        nomor_hp,
+      });
+
+    if (biodataError) {
+      console.error('Warning: Failed to pre-fill biodata_pribadi:', biodataError.message);
+      // Non-fatal: user can fill it manually in Biodata page
     }
 
     // 5. Send verification email via Supabase resend API

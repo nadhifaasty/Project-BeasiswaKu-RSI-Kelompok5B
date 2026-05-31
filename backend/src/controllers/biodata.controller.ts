@@ -152,8 +152,17 @@ export const upsertAkademik = async (req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    if (Number(ipk_nilai) < 0 || Number(ipk_nilai) > 4) {
-      sendError(res, 'IPK/Nilai harus antara 0 dan 4.', 400);
+    // SMA/SMK/MA pakai skala nilai rapor 0-100, Perguruan Tinggi pakai IPK 0-4
+    const isPerguruanTinggi = jenjang === 'Perguruan Tinggi';
+    const maxNilai = isPerguruanTinggi ? 4 : 100;
+    const nilai = Number(ipk_nilai);
+
+    if (nilai < 0 || nilai > maxNilai) {
+      sendError(
+        res,
+        isPerguruanTinggi ? 'IPK harus antara 0 dan 4.' : 'Nilai rata-rata rapor harus antara 0 dan 100.',
+        400
+      );
       return;
     }
 

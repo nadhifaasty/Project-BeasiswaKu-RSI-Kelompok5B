@@ -95,8 +95,10 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Redirect based on role
     switch (userData.role) {
-      case 'admin':
       case 'super_admin':
+        navigate('/superadmin/dashboard', { replace: true })
+        break
+      case 'admin':
         navigate('/admin/dashboard', { replace: true })
         break
       case 'siswa':

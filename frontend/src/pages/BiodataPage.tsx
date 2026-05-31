@@ -454,31 +454,46 @@ function FormOrangTua({ data, onChange }: { data: BiodataOrangTua; onChange: (d:
 }
 
 function FormAkademik({ data, onChange }: { data: BiodataAkademik; onChange: (d: BiodataAkademik) => void }) {
+  const isSMA = data.jenjang !== 'Perguruan Tinggi'
+
   return (
     <div className="space-y-5">
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Jenjang Pendidikan</label>
         <ToggleGroup
           options={['SMA/SMK/MA', 'Perguruan Tinggi']}
-          value={data.jenjang === 'Perguruan Tinggi' ? 'Perguruan Tinggi' : 'SMA/SMK/MA'}
+          value={isSMA ? 'SMA/SMK/MA' : 'Perguruan Tinggi'}
           onChange={(v) => onChange({ ...data, jenjang: v })}
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Field label="Nama Sekolah / Universitas" value={data.asal_institusi} onChange={(v) => onChange({ ...data, asal_institusi: v })} placeholder="Universitas Sebelas Maret" />
-        <Field label="Jurusan / Program Studi" value={data.program_studi} onChange={(v) => onChange({ ...data, program_studi: v })} placeholder="Informatika" />
+        <Field
+          label={isSMA ? 'Nama Sekolah' : 'Nama Universitas'}
+          value={data.asal_institusi}
+          onChange={(v) => onChange({ ...data, asal_institusi: v })}
+          placeholder={isSMA ? 'SMA Negeri 1 Surakarta' : 'Universitas Sebelas Maret'}
+        />
+        <Field
+          label={isSMA ? 'Jurusan' : 'Program Studi'}
+          value={data.program_studi}
+          onChange={(v) => onChange({ ...data, program_studi: v })}
+          placeholder={isSMA ? 'IPA / IPS / Bahasa' : 'Informatika'}
+        />
       </div>
       <div className="md:w-1/2">
         <Field
-          label="Nilai Rata-rata / IPK"
+          label={isSMA ? 'Nilai Rata-rata Rapor' : 'IPK'}
           type="number"
           step="0.01"
           min="0"
-          max="4"
+          max={isSMA ? '100' : '4'}
           value={data.ipk_nilai ? String(data.ipk_nilai) : ''}
           onChange={(v) => onChange({ ...data, ipk_nilai: Number(v) })}
-          placeholder="3.75"
+          placeholder={isSMA ? '85.50' : '3.75'}
         />
+        <p className="text-xs text-gray-400 mt-1">
+          {isSMA ? 'Skala 0 - 100 (nilai rata-rata rapor)' : 'Skala 0 - 4.00 (IPK)'}
+        </p>
       </div>
     </div>
   )
