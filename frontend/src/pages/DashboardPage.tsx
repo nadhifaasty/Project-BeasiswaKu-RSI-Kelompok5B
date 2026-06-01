@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { fetchApi } from '../services/api'
 import { getPrograms, getUserApplications, type Application, type ScholarshipProgram } from '../services/scholarship'
-
-interface ApiResponse<T> {
-  success: boolean
-  message: string
-  data: T
-}
+import { getProfile } from '../services/biodata'
 
 function DashboardPage() {
   const { user } = useAuth()
@@ -24,18 +18,13 @@ function DashboardPage() {
   async function loadDashboard() {
     try {
       setLoading(true)
-      const [biodataRes, apps, progs] = await Promise.all([
-        fetchApi<ApiResponse<{ pribadi: any; alamat: any; orang_tua: any; akademik: any }>>('/biodata'),
+      const [profile, apps, progs] = await Promise.all([
+        getProfile(),
         getUserApplications(),
         getPrograms(),
       ])
 
-      let p = 0
-      if (biodataRes.data.pribadi) p += 25
-      if (biodataRes.data.alamat) p += 25
-      if (biodataRes.data.orang_tua) p += 25
-      if (biodataRes.data.akademik) p += 25
-      setProgress(p)
+      setProgress(profile.biodata_progress)
       setApplications(apps)
       setPrograms(progs)
     } catch {

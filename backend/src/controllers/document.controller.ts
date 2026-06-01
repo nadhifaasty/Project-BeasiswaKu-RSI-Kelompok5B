@@ -1,94 +1,78 @@
 import { Response } from 'express';
-import { documentService, DocumentType } from '../services/document.service';
-import { sendSuccess, sendError } from '../utils';
+import * as documentService from '../services/document.service';
+import { DocumentType } from '../services/document.service';
 import { AuthenticatedRequest } from '../types';
 
 const VALID_TYPES: DocumentType[] = ['foto', 'ktp', 'kartu_keluarga', 'transkrip', 'sktm', 'sertifikat_prestasi'];
 
-/**
- * GET /api/documents/:applicationId
- * Get all documents for an application
- */
 export const getDocuments = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
     const { applicationId } = req.params;
     const data = await documentService.getByApplication(applicationId, userId);
-    sendSuccess(res, data, 'Dokumen berhasil diambil.');
+    res.json({ success: true, message: 'Dokumen berhasil diambil.', data });
   } catch (error: any) {
-    sendError(res, error.message, 404);
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
-/**
- * POST /api/documents/upload-url
- * Get a signed upload URL for Supabase Storage
- */
 export const getUploadUrl = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
     const { application_id, jenis, file_name } = req.body;
 
     if (!application_id || !jenis || !file_name) {
-      sendError(res, 'application_id, jenis, dan file_name wajib diisi.', 400);
+      res.status(400).json({ success: false, message: 'application_id, jenis, dan file_name wajib diisi.' });
       return;
     }
 
     if (!VALID_TYPES.includes(jenis)) {
-      sendError(res, `Jenis dokumen tidak valid. Pilihan: ${VALID_TYPES.join(', ')}`, 400);
+      res.status(400).json({ success: false, message: `Jenis dokumen tidak valid. Pilihan: ${VALID_TYPES.join(', ')}` });
       return;
     }
 
     const data = await documentService.getUploadUrl(userId, application_id, jenis, file_name);
-    sendSuccess(res, data, 'Upload URL berhasil dibuat.');
+    res.json({ success: true, message: 'Upload URL berhasil dibuat.', data });
   } catch (error: any) {
-    sendError(res, error.message, 500);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-/**
- * POST /api/documents
- * Save document record after successful upload
- */
 export const saveDocument = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
     const { application_id, jenis, file_url } = req.body;
 
     if (!application_id || !jenis || !file_url) {
-      sendError(res, 'application_id, jenis, dan file_url wajib diisi.', 400);
+      res.status(400).json({ success: false, message: 'application_id, jenis, dan file_url wajib diisi.' });
       return;
     }
 
     if (!VALID_TYPES.includes(jenis)) {
-      sendError(res, `Jenis dokumen tidak valid. Pilihan: ${VALID_TYPES.join(', ')}`, 400);
+      res.status(400).json({ success: false, message: `Jenis dokumen tidak valid. Pilihan: ${VALID_TYPES.join(', ')}` });
       return;
     }
 
     const data = await documentService.saveDocument(userId, { application_id, jenis, file_url });
-    sendSuccess(res, data, 'Dokumen berhasil disimpan.', 201);
+    res.status(201).json({ success: true, message: 'Dokumen berhasil disimpan.', data });
   } catch (error: any) {
-    sendError(res, error.message, 500);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-/**
- * PATCH /api/documents/:id/status (Admin)
- * Validate or reject a document
- */
 export const updateDocumentStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
     if (!status || !['tervalidasi', 'ditolak'].includes(status)) {
-      sendError(res, 'Status harus "tervalidasi" atau "ditolak".', 400);
+      res.status(400).json({ success: false, message: 'Status harus "tervalidasi" atau "ditolak".' });
       return;
     }
 
     const data = await documentService.updateDocumentStatus(id, status);
-    sendSuccess(res, data, 'Status dokumen berhasil diperbarui.');
+    res.json({ success: true, message: 'Status dokumen berhasil diperbarui.', data });
   } catch (error: any) {
-    sendError(res, error.message, 500);
+    res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -4,14 +4,14 @@ const programs = [
   {
     title: 'Beasiswa SMA',
     desc: 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.',
-    nominal: 'Rp 500.000 / bulan',
+    monthly_amount: 750000,
     deadline: '25 Jan 2026',
     kuota: 50,
   },
   {
     title: 'Beasiswa Perguruan Tinggi',
     desc: 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.',
-    nominal: 'Rp 750.000 / bulan',
+    monthly_amount: 1000000,
     deadline: '25 Jan 2026',
     kuota: 100,
   },
@@ -74,7 +74,7 @@ function HomePage() {
                   <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">TERBUKA</span>
                   <h3 className="text-xl font-bold text-primary mt-3 mb-2">{p.title}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed mb-4">{p.desc}</p>
-                  <p className="text-accent font-bold text-lg mb-3">{p.nominal}</p>
+                  <p className="text-accent font-bold text-lg mb-3">Rp{p.monthly_amount.toLocaleString('id-ID')} / bulan</p>
                   <div className="flex justify-between text-sm text-gray-500 border-t pt-3">
                     <span>Deadline: {p.deadline}</span>
                     <span>Sisa Kuota: {p.kuota}</span>

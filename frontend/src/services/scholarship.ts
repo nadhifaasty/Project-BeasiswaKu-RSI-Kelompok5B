@@ -1,4 +1,4 @@
-import { fetchApi } from './api'
+import { fetchApi, type ApiResponse } from './api'
 
 // ============ TYPES ============
 
@@ -6,7 +6,7 @@ export interface ScholarshipProgram {
   id: string
   nama: string
   deskripsi: string
-  nominal: string
+  monthly_amount: number
   deadline: string
   kuota: number
   sisa_kuota: number
@@ -29,7 +29,7 @@ export interface Application {
   updated_at: string
   scholarship_programs?: {
     nama: string
-    nominal: string
+    monthly_amount: number
     deadline: string
     status: string
   }
@@ -42,36 +42,30 @@ export interface CreateApplicationPayload {
   prestasi_non_akademik?: string
 }
 
-interface ApiResponse<T> {
-  success: boolean
-  message: string
-  data: T
-}
-
 // ============ API CALLS ============
 
 export async function getPrograms(): Promise<ScholarshipProgram[]> {
-  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/scholarship/programs')
+  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/programs')
   return res.data
 }
 
 export async function getProgramById(id: string): Promise<ScholarshipProgram> {
-  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/scholarship/programs/${id}`)
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/programs/${id}`)
   return res.data
 }
 
 export async function getUserApplications(): Promise<Application[]> {
-  const res = await fetchApi<ApiResponse<Application[]>>('/scholarship/applications')
+  const res = await fetchApi<ApiResponse<Application[]>>('/applications/my')
   return res.data
 }
 
 export async function getApplicationById(id: string): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>(`/scholarship/applications/${id}`)
+  const res = await fetchApi<ApiResponse<Application>>(`/applications/${id}`)
   return res.data
 }
 
 export async function createApplication(payload: CreateApplicationPayload): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>('/scholarship/applications', {
+  const res = await fetchApi<ApiResponse<Application>>('/applications', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

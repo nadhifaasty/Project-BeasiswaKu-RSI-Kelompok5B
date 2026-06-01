@@ -1,4 +1,11 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+export type ApiResponse<T = any> = {
+  success: boolean
+  message: string
+  data?: T
+  error?: string
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
 
 interface ApiErrorResponse {
   success: false

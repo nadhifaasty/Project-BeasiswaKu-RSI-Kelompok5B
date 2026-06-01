@@ -1,10 +1,6 @@
-import { fetchApi } from './api'
+import { fetchApi, type ApiResponse } from './api'
 
-// ============ TYPES ============
-
-export interface BiodataPribadi {
-  id?: string
-  user_id?: string
+export interface ProfilePribadi {
   nama_lengkap: string
   nim_nisn: string
   email: string
@@ -15,9 +11,7 @@ export interface BiodataPribadi {
   agama?: string
 }
 
-export interface BiodataAlamat {
-  id?: string
-  user_id?: string
+export interface ProfileAlamat {
   alamat: string
   rt_rw?: string
   kelurahan?: string
@@ -27,9 +21,7 @@ export interface BiodataAlamat {
   kode_pos: string
 }
 
-export interface BiodataOrangTua {
-  id?: string
-  user_id?: string
+export interface ProfileOrangTua {
   ayah_nama: string
   ayah_pekerjaan: string
   ayah_penghasilan: number
@@ -38,83 +30,43 @@ export interface BiodataOrangTua {
   ibu_penghasilan: number
 }
 
-export interface BiodataAkademik {
-  id?: string
-  user_id?: string
+export interface ProfileAkademik {
   jenjang: string
   asal_institusi: string
   program_studi: string
   ipk_nilai: number
 }
 
-export interface AllBiodata {
-  pribadi: BiodataPribadi | null
-  alamat: BiodataAlamat | null
-  orang_tua: BiodataOrangTua | null
-  akademik: BiodataAkademik | null
+export interface ProfileData {
+  pribadi?: ProfilePribadi
+  alamat?: ProfileAlamat
+  orang_tua?: ProfileOrangTua
+  akademik?: ProfileAkademik
 }
 
-interface ApiResponse<T> {
-  success: boolean
-  message: string
-  data: T
+export interface UserProfile {
+  id: string
+  nama_lengkap: string
+  nim_nisn: string
+  email: string
+  nomor_hp: string
+  role: string
+  biodata_progress: number
+  biodata_complete: boolean
+  profile_data: ProfileData
+  created_at: string
+  updated_at: string
 }
 
-// ============ API CALLS ============
-
-export async function getAllBiodata(): Promise<AllBiodata> {
-  const res = await fetchApi<ApiResponse<AllBiodata>>('/biodata')
+export async function getProfile(): Promise<UserProfile> {
+  const res = await fetchApi<ApiResponse<UserProfile>>('/users/me/profile')
   return res.data
 }
 
-export async function getBiodataPribadi(): Promise<BiodataPribadi | null> {
-  const res = await fetchApi<ApiResponse<BiodataPribadi | null>>('/biodata/pribadi')
-  return res.data
-}
-
-export async function saveBiodataPribadi(payload: BiodataPribadi): Promise<BiodataPribadi> {
-  const res = await fetchApi<ApiResponse<BiodataPribadi>>('/biodata/pribadi', {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
-  return res.data
-}
-
-export async function getBiodataAlamat(): Promise<BiodataAlamat | null> {
-  const res = await fetchApi<ApiResponse<BiodataAlamat | null>>('/biodata/alamat')
-  return res.data
-}
-
-export async function saveBiodataAlamat(payload: BiodataAlamat): Promise<BiodataAlamat> {
-  const res = await fetchApi<ApiResponse<BiodataAlamat>>('/biodata/alamat', {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
-  return res.data
-}
-
-export async function getBiodataOrangTua(): Promise<BiodataOrangTua | null> {
-  const res = await fetchApi<ApiResponse<BiodataOrangTua | null>>('/biodata/orang-tua')
-  return res.data
-}
-
-export async function saveBiodataOrangTua(payload: BiodataOrangTua): Promise<BiodataOrangTua> {
-  const res = await fetchApi<ApiResponse<BiodataOrangTua>>('/biodata/orang-tua', {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
-  return res.data
-}
-
-export async function getBiodataAkademik(): Promise<BiodataAkademik | null> {
-  const res = await fetchApi<ApiResponse<BiodataAkademik | null>>('/biodata/akademik')
-  return res.data
-}
-
-export async function saveBiodataAkademik(payload: BiodataAkademik): Promise<BiodataAkademik> {
-  const res = await fetchApi<ApiResponse<BiodataAkademik>>('/biodata/akademik', {
-    method: 'PUT',
-    body: JSON.stringify(payload),
+export async function updateProfile(profileData: Partial<ProfileData>): Promise<{ biodata_progress: number; biodata_complete: boolean }> {
+  const res = await fetchApi<ApiResponse<{ biodata_progress: number; biodata_complete: boolean }>>('/users/me/profile', {
+    method: 'PATCH',
+    body: JSON.stringify({ profile_data: profileData }),
   })
   return res.data
 }
