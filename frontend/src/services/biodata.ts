@@ -24,10 +24,10 @@ export interface ProfileAlamat {
 export interface ProfileOrangTua {
   ayah_nama: string
   ayah_pekerjaan: string
-  ayah_penghasilan: number
+  ayah_penghasilan: string
   ibu_nama: string
   ibu_pekerjaan: string
-  ibu_penghasilan: number
+  ibu_penghasilan: string
 }
 
 export interface ProfileAkademik {

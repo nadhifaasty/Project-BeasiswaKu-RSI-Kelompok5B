@@ -126,6 +126,36 @@ function ToggleGroup({
 
 // ============ MAIN PAGE ============
 
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: { label: string; value: string }[]
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition bg-white"
+      >
+        <option value="" disabled>Pilih salah satu...</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 function BiodataPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -142,8 +172,8 @@ function BiodataPage() {
     alamat: '', rt_rw: '', kelurahan: '', provinsi: '', kota: '', kecamatan: '', kode_pos: '',
   })
   const [orangTua, setOrangTua] = useState<BiodataOrangTua>({
-    ayah_nama: '', ayah_pekerjaan: '', ayah_penghasilan: 0,
-    ibu_nama: '', ibu_pekerjaan: '', ibu_penghasilan: 0,
+    ayah_nama: '', ayah_pekerjaan: '', ayah_penghasilan: '',
+    ibu_nama: '', ibu_pekerjaan: '', ibu_penghasilan: '',
   })
   const [akademik, setAkademik] = useState<BiodataAkademik>({
     jenjang: 'SMA/SMK/MA', asal_institusi: '', program_studi: '', ipk_nilai: 0,
@@ -414,6 +444,14 @@ function FormAlamat({ data, onChange }: { data: BiodataAlamat; onChange: (d: Bio
 }
 
 function FormOrangTua({ data, onChange }: { data: BiodataOrangTua; onChange: (d: BiodataOrangTua) => void }) {
+  const bracketOptions = [
+    { value: 'Golongan 1 & 2 (< Rp 2.000.000)', label: 'Golongan 1 & 2 (< Rp 2.000.000)' },
+    { value: 'Golongan 3 (Rp 2.000.000 - Rp 3.500.000)', label: 'Golongan 3 (Rp 2.000.000 - Rp 3.500.000)' },
+    { value: 'Golongan 4 (Rp 3.500.000 - Rp 5.000.000)', label: 'Golongan 4 (Rp 3.500.000 - Rp 5.000.000)' },
+    { value: 'Golongan 5 (Rp 5.000.000 - Rp 10.000.000)', label: 'Golongan 5 (Rp 5.000.000 - Rp 10.000.000)' },
+    { value: 'Golongan 6+ (> Rp 10.000.000)', label: 'Golongan 6+ (> Rp 10.000.000)' },
+  ]
+
   return (
     <div className="space-y-6">
       <div>
@@ -423,12 +461,11 @@ function FormOrangTua({ data, onChange }: { data: BiodataOrangTua; onChange: (d:
           <Field label="Pekerjaan" value={data.ayah_pekerjaan} onChange={(v) => onChange({ ...data, ayah_pekerjaan: v })} placeholder="Wiraswasta" />
         </div>
         <div className="mt-5">
-          <Field
+          <SelectField
             label="Penghasilan Bulanan"
-            type="number"
-            value={data.ayah_penghasilan ? String(data.ayah_penghasilan) : ''}
-            onChange={(v) => onChange({ ...data, ayah_penghasilan: Number(v) })}
-            placeholder="3000000"
+            value={data.ayah_penghasilan}
+            onChange={(v) => onChange({ ...data, ayah_penghasilan: v })}
+            options={bracketOptions}
           />
         </div>
       </div>
@@ -440,12 +477,11 @@ function FormOrangTua({ data, onChange }: { data: BiodataOrangTua; onChange: (d:
           <Field label="Pekerjaan" value={data.ibu_pekerjaan} onChange={(v) => onChange({ ...data, ibu_pekerjaan: v })} placeholder="Ibu Rumah Tangga" />
         </div>
         <div className="mt-5">
-          <Field
+          <SelectField
             label="Penghasilan Bulanan"
-            type="number"
-            value={data.ibu_penghasilan ? String(data.ibu_penghasilan) : ''}
-            onChange={(v) => onChange({ ...data, ibu_penghasilan: Number(v) })}
-            placeholder="0"
+            value={data.ibu_penghasilan}
+            onChange={(v) => onChange({ ...data, ibu_penghasilan: v })}
+            options={bracketOptions}
           />
         </div>
       </div>

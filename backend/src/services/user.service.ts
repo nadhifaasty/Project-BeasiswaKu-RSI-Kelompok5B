@@ -23,10 +23,10 @@ export interface ProfileData {
   orang_tua?: {
     ayah_nama: string;
     ayah_pekerjaan: string;
-    ayah_penghasilan: number;
+    ayah_penghasilan: string;
     ibu_nama: string;
     ibu_pekerjaan: string;
-    ibu_penghasilan: number;
+    ibu_penghasilan: string;
   };
   akademik?: {
     jenjang: string;
