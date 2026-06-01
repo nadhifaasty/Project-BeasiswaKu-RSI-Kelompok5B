@@ -5,7 +5,7 @@ import { getPrograms, getUserApplications, type Application, type ScholarshipPro
 import { getProfile } from '../services/biodata'
 
 function DashboardPage() {
-  const { user } = useAuth()
+  useAuth()
   const [progress, setProgress] = useState(0)
   const [applications, setApplications] = useState<Application[]>([])
   const [programs, setPrograms] = useState<ScholarshipProgram[]>([])

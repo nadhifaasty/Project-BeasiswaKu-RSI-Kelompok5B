@@ -60,7 +60,7 @@ export interface UserProfile {
 
 export async function getProfile(): Promise<UserProfile> {
   const res = await fetchApi<ApiResponse<UserProfile>>('/users/me/profile')
-  return res.data
+  return res.data!
 }
 
 export async function updateProfile(profileData: Partial<ProfileData>): Promise<{ biodata_progress: number; biodata_complete: boolean }> {
@@ -68,5 +68,5 @@ export async function updateProfile(profileData: Partial<ProfileData>): Promise<
     method: 'PATCH',
     body: JSON.stringify({ profile_data: profileData }),
   })
-  return res.data
+  return res.data!
 }

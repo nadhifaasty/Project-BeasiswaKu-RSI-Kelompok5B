@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getPrograms,
@@ -7,7 +7,7 @@ import {
   type ScholarshipProgram,
   type Application,
 } from '../services/scholarship'
-import { fetchApi } from '../services/api'
+import { fetchApi, type ApiResponse } from '../services/api'
 
 // ============ TYPES ============
 
@@ -122,7 +122,7 @@ function PengajuanPage() {
       for (const doc of docs) {
         if (!doc.file) continue
 
-        const uploadRes = await fetchApi<{ signedUrl: string; publicUrl: string }>(
+        const uploadRes = await fetchApi<ApiResponse<{ signedUrl: string; publicUrl: string }>>(
           `/applications/${app.id}/documents/upload-url`,
           {
             method: 'POST',
@@ -135,7 +135,7 @@ function PengajuanPage() {
         )
 
         // Upload to Supabase Storage via signed URL
-        await fetch(uploadRes.data.signedUrl, {
+        await fetch(uploadRes.data!.signedUrl, {
           method: 'PUT',
           body: doc.file,
           headers: { 'Content-Type': doc.file.type },
@@ -147,7 +147,7 @@ function PengajuanPage() {
           body: JSON.stringify({
             application_id: app.id,
             jenis: doc.jenis,
-            file_url: uploadRes.data.publicUrl,
+            file_url: uploadRes.data!.publicUrl,
           }),
         })
       }

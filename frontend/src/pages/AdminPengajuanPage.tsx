@@ -51,7 +51,7 @@ function AdminPengajuanPage() {
       const res = await fetchApi<ApiResponse<AdminApplication[]>>(
         `/applications${query}`
       )
-      setApplications(res.data)
+      setApplications(res.data || [])
     } catch {
       setMessage({ type: 'error', text: 'Gagal memuat data pengajuan.' })
     } finally {

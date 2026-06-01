@@ -46,22 +46,22 @@ export interface CreateApplicationPayload {
 
 export async function getPrograms(): Promise<ScholarshipProgram[]> {
   const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/programs')
-  return res.data
+  return res.data!
 }
 
 export async function getProgramById(id: string): Promise<ScholarshipProgram> {
   const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/programs/${id}`)
-  return res.data
+  return res.data!
 }
 
 export async function getUserApplications(): Promise<Application[]> {
   const res = await fetchApi<ApiResponse<Application[]>>('/applications/my')
-  return res.data
+  return res.data!
 }
 
 export async function getApplicationById(id: string): Promise<Application> {
   const res = await fetchApi<ApiResponse<Application>>(`/applications/${id}`)
-  return res.data
+  return res.data!
 }
 
 export async function createApplication(payload: CreateApplicationPayload): Promise<Application> {
@@ -69,5 +69,5 @@ export async function createApplication(payload: CreateApplicationPayload): Prom
     method: 'POST',
     body: JSON.stringify(payload),
   })
-  return res.data
+  return res.data!
 }

@@ -2,15 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  getAllBiodata,
-  saveBiodataPribadi,
-  saveBiodataAlamat,
-  saveBiodataOrangTua,
-  saveBiodataAkademik,
-  type BiodataPribadi,
-  type BiodataAlamat,
-  type BiodataOrangTua,
-  type BiodataAkademik,
+  getProfile,
+  updateProfile,
+  type ProfilePribadi as BiodataPribadi,
+  type ProfileAlamat as BiodataAlamat,
+  type ProfileOrangTua as BiodataOrangTua,
+  type ProfileAkademik as BiodataAkademik,
 } from '../services/biodata'
 
 // ============ TAB DEFINITIONS ============
@@ -82,7 +79,7 @@ function Field({
   onChange: (v: string) => void
   placeholder?: string
   type?: string
-} & React.InputHTMLAttributes<HTMLInputElement>) {
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
@@ -163,7 +160,8 @@ function BiodataPage() {
   async function loadBiodata() {
     try {
       setLoading(true)
-      const data = await getAllBiodata()
+      const profile = await getProfile()
+      const data = profile.profile_data || {}
 
       if (data.pribadi) {
         setPribadi({ jenis_kelamin: 'Laki-laki', ...data.pribadi })
@@ -178,7 +176,7 @@ function BiodataPage() {
       }
       if (data.alamat) { setAlamat(data.alamat); setFilled((f) => ({ ...f, alamat: true })) }
       if (data.orang_tua) { setOrangTua(data.orang_tua); setFilled((f) => ({ ...f, 'orang-tua': true })) }
-      if (data.akademik) { setAkademik({ jenjang: 'SMA/SMK/MA', ...data.akademik }); setFilled((f) => ({ ...f, akademik: true })) }
+      if (data.akademik) { setAkademik({ ...data.akademik, jenjang: data.akademik.jenjang || 'SMA/SMK/MA' }); setFilled((f) => ({ ...f, akademik: true })) }
     } catch {
       setMessage({ type: 'error', text: 'Gagal memuat biodata.' })
     } finally {
@@ -190,12 +188,14 @@ function BiodataPage() {
     setSaving(true)
     setMessage(null)
     try {
-      switch (activeTab) {
-        case 'pribadi': await saveBiodataPribadi(pribadi); break
-        case 'alamat': await saveBiodataAlamat(alamat); break
-        case 'orang-tua': await saveBiodataOrangTua(orangTua); break
-        case 'akademik': await saveBiodataAkademik(akademik); break
-      }
+      const payload: any = {}
+      if (activeTab === 'pribadi') payload.pribadi = pribadi
+      if (activeTab === 'alamat') payload.alamat = alamat
+      if (activeTab === 'orang-tua') payload.orang_tua = orangTua
+      if (activeTab === 'akademik') payload.akademik = akademik
+      
+      await updateProfile(payload)
+      
       setFilled((f) => ({ ...f, [activeTab]: true }))
       setMessage({ type: 'success', text: 'Data berhasil disimpan!' })
     } catch (err: any) {
