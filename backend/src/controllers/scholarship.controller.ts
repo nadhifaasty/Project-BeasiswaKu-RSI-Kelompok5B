@@ -1,16 +1,13 @@
 import { Request, Response } from 'express';
-import { scholarshipService } from '../services/scholarship.service';
-import { sendSuccess, sendError } from '../utils';
+import * as scholarshipService from '../services/scholarship.service';
 import { AuthenticatedRequest } from '../types';
-
-// ============ PROGRAMS (Public) ============
 
 export const getPrograms = async (_req: Request, res: Response): Promise<void> => {
   try {
     const data = await scholarshipService.getPrograms();
-    sendSuccess(res, data, 'Daftar program beasiswa berhasil diambil.');
+    res.json({ success: true, message: 'Daftar program beasiswa berhasil diambil.', data });
   } catch (error: any) {
-    sendError(res, error.message, 500);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -18,21 +15,19 @@ export const getProgramById = async (req: Request, res: Response): Promise<void>
   try {
     const { id } = req.params;
     const data = await scholarshipService.getProgramById(id);
-    sendSuccess(res, data, 'Detail program berhasil diambil.');
+    res.json({ success: true, message: 'Detail program berhasil diambil.', data });
   } catch (error: any) {
-    sendError(res, error.message, 404);
+    res.status(404).json({ success: false, message: error.message });
   }
 };
-
-// ============ APPLICATIONS (User) ============
 
 export const getUserApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
     const data = await scholarshipService.getUserApplications(userId);
-    sendSuccess(res, data, 'Daftar pengajuan berhasil diambil.');
+    res.json({ success: true, message: 'Daftar pengajuan berhasil diambil.', data });
   } catch (error: any) {
-    sendError(res, error.message, 500);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -41,9 +36,9 @@ export const getApplicationById = async (req: AuthenticatedRequest, res: Respons
     const userId = req.user!.userId;
     const { id } = req.params;
     const data = await scholarshipService.getApplicationById(id, userId);
-    sendSuccess(res, data, 'Detail pengajuan berhasil diambil.');
+    res.json({ success: true, message: 'Detail pengajuan berhasil diambil.', data });
   } catch (error: any) {
-    sendError(res, error.message, 404);
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
@@ -52,47 +47,39 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
     const userId = req.user!.userId;
     const { program_id, ipk, esai_motivasi, prestasi_non_akademik } = req.body;
 
-    // Validation
     if (!program_id || ipk === undefined || !esai_motivasi) {
-      sendError(res, 'Program, IPK, dan esai motivasi wajib diisi.', 400);
+      res.status(400).json({ success: false, message: 'Program, IPK, dan esai motivasi wajib diisi.' });
       return;
     }
 
     if (Number(ipk) < 0 || Number(ipk) > 4) {
-      sendError(res, 'IPK harus antara 0 dan 4.', 400);
+      res.status(400).json({ success: false, message: 'IPK harus antara 0 dan 4.' });
       return;
     }
 
     if (esai_motivasi.length < 100) {
-      sendError(res, 'Esai motivasi minimal 100 karakter.', 400);
+      res.status(400).json({ success: false, message: 'Esai motivasi minimal 100 karakter.' });
       return;
     }
 
-    const data = await scholarshipService.createApplication(userId, {
-      program_id,
-      ipk: Number(ipk),
-      esai_motivasi,
-      prestasi_non_akademik,
-    });
+    const data = await scholarshipService.createApplication(userId, { program_id, ipk: Number(ipk), esai_motivasi, prestasi_non_akademik });
 
-    sendSuccess(res, data, 'Pengajuan beasiswa berhasil dibuat!', 201);
+    res.status(201).json({ success: true, message: 'Pengajuan beasiswa berhasil dibuat!', data });
   } catch (error: any) {
     const status = error.message.includes('sudah mengajukan') ? 409 :
-                   error.message.includes('Lengkapi biodata') ? 400 :
-                   error.message.includes('ditutup') || error.message.includes('penuh') ? 400 : 500;
-    sendError(res, error.message, status);
+      error.message.includes('Lengkapi biodata') ? 400 :
+      error.message.includes('ditutup') || error.message.includes('penuh') ? 400 : 500;
+    res.status(status).json({ success: false, message: error.message });
   }
 };
-
-// ============ ADMIN ============
 
 export const getAllApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { status } = req.query;
     const data = await scholarshipService.getAllApplications(status as string | undefined);
-    sendSuccess(res, data, 'Daftar semua pengajuan berhasil diambil.');
+    res.json({ success: true, message: 'Daftar semua pengajuan berhasil diambil.', data });
   } catch (error: any) {
-    sendError(res, error.message, 500);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -102,13 +89,13 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
     const { status, catatan_admin } = req.body;
 
     if (!status) {
-      sendError(res, 'Status wajib diisi.', 400);
+      res.status(400).json({ success: false, message: 'Status wajib diisi.' });
       return;
     }
 
     const data = await scholarshipService.updateApplicationStatus(id, status, catatan_admin);
-    sendSuccess(res, data, 'Status pengajuan berhasil diperbarui.');
+    res.json({ success: true, message: 'Status pengajuan berhasil diperbarui.', data });
   } catch (error: any) {
-    sendError(res, error.message, 400);
+    res.status(400).json({ success: false, message: error.message });
   }
 };

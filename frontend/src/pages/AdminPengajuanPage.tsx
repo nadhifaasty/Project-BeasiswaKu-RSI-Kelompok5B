@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Button, Card } from '../components'
-import { Badge } from '../components/shared'
-import { fetchApi } from '../services/api'
+import Button from '../components/Button'
+import Card from '../components/Card'
+import Badge from '../components/shared/Badge'
+import { fetchApi, type ApiResponse } from '../services/api'
 
 // ============ TYPES ============
 
@@ -21,14 +22,8 @@ interface AdminApplication {
   }
   scholarship_programs: {
     nama: string
-    nominal: string
+    monthly_amount: number
   }
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  message: string
-  data: T
 }
 
 type StatusFilter = '' | 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
@@ -54,7 +49,7 @@ function AdminPengajuanPage() {
       setLoading(true)
       const query = filter ? `?status=${filter}` : ''
       const res = await fetchApi<ApiResponse<AdminApplication[]>>(
-        `/scholarship/admin/applications${query}`
+        `/applications${query}`
       )
       setApplications(res.data)
     } catch {
@@ -71,7 +66,7 @@ function AdminPengajuanPage() {
     setMessage(null)
 
     try {
-      await fetchApi(`/scholarship/admin/applications/${selectedApp.id}/status`, {
+      await fetchApi(`/applications/${selectedApp.id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus, catatan_admin: catatan || undefined }),
       })

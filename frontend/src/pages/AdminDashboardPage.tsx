@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchApi } from '../services/api'
+import { fetchApi, type ApiResponse } from '../services/api'
 
 interface AdminApplication {
   id: string
@@ -9,12 +9,6 @@ interface AdminApplication {
   created_at: string
   profiles: { nama_lengkap: string; nim_nisn: string }
   scholarship_programs: { nama: string }
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  message: string
-  data: T
 }
 
 function AdminDashboardPage() {
@@ -29,7 +23,7 @@ function AdminDashboardPage() {
   async function loadData() {
     try {
       setLoading(true)
-      const res = await fetchApi<ApiResponse<AdminApplication[]>>('/scholarship/admin/applications')
+      const res = await fetchApi<ApiResponse<AdminApplication[]>>('/applications')
       const apps = res.data
       setApplications(apps)
 

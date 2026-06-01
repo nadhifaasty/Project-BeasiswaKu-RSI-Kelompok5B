@@ -12,78 +12,19 @@ create table if not exists public.profiles (
   email text not null,
   role text not null default 'siswa' check (role in ('siswa', 'admin', 'super_admin')),
   biodata_progress integer not null default 0 check (biodata_progress between 0 and 100),
+  profile_data jsonb not null default '{}',
+  biodata_complete boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 alter table public.profiles enable row level security;
 
--- 2. BIODATA PRIBADI
-create table if not exists public.biodata_pribadi (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references public.profiles(id) on delete cascade unique not null,
-  nama_lengkap text not null,
-  nim_nisn text not null,
-  email text not null,
-  nomor_hp text not null,
-  tempat_lahir text,
-  tanggal_lahir date,
-  jenis_kelamin text check (jenis_kelamin in ('Laki-laki', 'Perempuan')),
-  agama text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.biodata_pribadi enable row level security;
-
--- 3. BIODATA ALAMAT
-create table if not exists public.biodata_alamat (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references public.profiles(id) on delete cascade unique not null,
-  alamat text not null,
-  rt_rw text,
-  kelurahan text,
-  provinsi text not null,
-  kota text not null,
-  kecamatan text not null,
-  kode_pos text not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.biodata_alamat enable row level security;
-
--- 4. BIODATA ORANG TUA
-create table if not exists public.biodata_orang_tua (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references public.profiles(id) on delete cascade unique not null,
-  ayah_nama text not null,
-  ayah_pekerjaan text not null,
-  ayah_penghasilan numeric not null,
-  ibu_nama text not null,
-  ibu_pekerjaan text not null,
-  ibu_penghasilan numeric not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.biodata_orang_tua enable row level security;
-
--- 5. BIODATA AKADEMIK
-create table if not exists public.biodata_akademik (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references public.profiles(id) on delete cascade unique not null,
-  jenjang text not null,
-  asal_institusi text not null,
-  program_studi text not null,
-  ipk_nilai numeric not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.biodata_akademik enable row level security;
-
--- 6. SCHOLARSHIP PROGRAMS
+-- 2. SCHOLARSHIP PROGRAMS
 create table if not exists public.scholarship_programs (
   id uuid primary key default gen_random_uuid(),
   nama text not null,
   deskripsi text not null,
-  nominal text not null,
+  monthly_amount numeric(12,2) not null,
   deadline date not null,
   kuota integer not null,
   sisa_kuota integer not null,
@@ -93,7 +34,7 @@ create table if not exists public.scholarship_programs (
 );
 alter table public.scholarship_programs enable row level security;
 
--- 7. APPLICATIONS (pengajuan beasiswa)
+-- 3. APPLICATIONS (pengajuan beasiswa)
 create table if not exists public.applications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -111,7 +52,7 @@ create table if not exists public.applications (
 );
 alter table public.applications enable row level security;
 
--- 8. APPLICATION DOCUMENTS
+-- 4. APPLICATION DOCUMENTS
 create table if not exists public.application_documents (
   id uuid primary key default gen_random_uuid(),
   application_id uuid references public.applications(id) on delete cascade not null,
@@ -122,7 +63,7 @@ create table if not exists public.application_documents (
 );
 alter table public.application_documents enable row level security;
 
--- 9. FUND DISBURSEMENTS (pencairan dana)
+-- 5. FUND DISBURSEMENTS (pencairan dana)
 create table if not exists public.fund_disbursements (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -137,7 +78,7 @@ create table if not exists public.fund_disbursements (
 );
 alter table public.fund_disbursements enable row level security;
 
--- 10. FUND REPORTS (laporan penggunaan dana)
+-- 6. FUND REPORTS (laporan penggunaan dana)
 create table if not exists public.fund_reports (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -153,7 +94,7 @@ create table if not exists public.fund_reports (
 );
 alter table public.fund_reports enable row level security;
 
--- 11. SELECTION RESULTS (hasil seleksi)
+-- 7. SELECTION RESULTS (hasil seleksi)
 create table if not exists public.selection_results (
   id uuid primary key default gen_random_uuid(),
   application_id uuid references public.applications(id) on delete cascade not null unique,
@@ -169,7 +110,7 @@ create table if not exists public.selection_results (
 );
 alter table public.selection_results enable row level security;
 
--- 12. AUDIT LOGS
+-- 8. AUDIT LOGS
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete set null,
@@ -190,15 +131,7 @@ create policy "Users can view own profile"
 create policy "Users can update own profile"
   on public.profiles for update using (auth.uid() = id);
 
--- Biodata: user hanya bisa akses data sendiri
-create policy "Users can manage own biodata"
-  on public.biodata_pribadi for all using (auth.uid() = user_id);
-create policy "Users can manage own alamat"
-  on public.biodata_alamat for all using (auth.uid() = user_id);
-create policy "Users can manage own ortu"
-  on public.biodata_orang_tua for all using (auth.uid() = user_id);
-create policy "Users can manage own akademik"
-  on public.biodata_akademik for all using (auth.uid() = user_id);
+-- Profile data stored in jsonb `profile_data` column on profiles table
 
 -- Applications: user lihat punya sendiri, admin lihat semua
 create policy "Users can view own applications"
@@ -209,19 +142,7 @@ create policy "Users can insert own applications"
 -- ============================================
 -- SEED DATA (program beasiswa)
 -- ============================================
-insert into public.scholarship_programs (nama, deskripsi, nominal, deadline, kuota, sisa_kuota) values
-  ('Beasiswa SMA', 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.', 'Rp 750.000 / bulan', '2026-01-25', 50, 50),
-  ('Beasiswa Perguruan Tinggi', 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.', 'Rp 1.000.000 / bulan', '2026-01-25', 100, 100)
+insert into public.scholarship_programs (nama, deskripsi, monthly_amount, deadline, kuota, sisa_kuota) values
+  ('Beasiswa SMA', 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.', 750000.00, '2026-01-25', 50, 50),
+  ('Beasiswa Perguruan Tinggi', 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.', 1000000.00, '2026-01-25', 100, 100)
 on conflict do nothing;
-
--- ============================================
--- MIGRATION: Tambahan kolom biodata (untuk DB yang sudah ada)
--- Aman dijalankan berulang kali (idempotent).
--- ============================================
-alter table public.biodata_pribadi add column if not exists tempat_lahir text;
-alter table public.biodata_pribadi add column if not exists tanggal_lahir date;
-alter table public.biodata_pribadi add column if not exists jenis_kelamin text;
-alter table public.biodata_pribadi add column if not exists agama text;
-
-alter table public.biodata_alamat add column if not exists rt_rw text;
-alter table public.biodata_alamat add column if not exists kelurahan text;
