@@ -2,8 +2,6 @@ import { Router } from 'express';
 import { verifyJWT } from '../middlewares/auth.middleware';
 import { checkRole } from '../middlewares/rbac.middleware';
 import {
-  getPrograms,
-  getProgramById,
   getUserApplications,
   getApplicationById,
   createApplication,
@@ -12,13 +10,6 @@ import {
 } from '../controllers/scholarship.controller';
 
 const router = Router();
-
-// ============ PUBLIC: Programs ============
-// GET /api/scholarship/programs
-router.get('/programs', getPrograms);
-
-// GET /api/scholarship/programs/:id
-router.get('/programs/:id', getProgramById);
 
 // ============ USER: Applications (requires auth) ============
 // GET /api/scholarship/applications

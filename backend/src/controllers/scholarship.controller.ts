@@ -3,27 +3,6 @@ import { scholarshipService } from '../services/scholarship.service';
 import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
 
-// ============ PROGRAMS (Public) ============
-
-export const getPrograms = async (_req: Request, res: Response): Promise<void> => {
-  try {
-    const data = await scholarshipService.getPrograms();
-    sendSuccess(res, data, 'Daftar program beasiswa berhasil diambil.');
-  } catch (error: any) {
-    sendError(res, error.message, 500);
-  }
-};
-
-export const getProgramById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const data = await scholarshipService.getProgramById(id);
-    sendSuccess(res, data, 'Detail program berhasil diambil.');
-  } catch (error: any) {
-    sendError(res, error.message, 404);
-  }
-};
-
 // ============ APPLICATIONS (User) ============
 
 export const getUserApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {

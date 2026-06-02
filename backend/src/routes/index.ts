@@ -5,6 +5,7 @@ import authRoutes from './auth.routes';
 import biodataRoutes from './biodata.routes';
 import scholarshipRoutes from './scholarship.routes';
 import documentRoutes from './document.routes';
+import programRoutes from './program.routes';
 
 const router = Router();
 
@@ -19,6 +20,9 @@ router.use('/biodata', biodataRoutes);
 
 // Scholarship routes
 router.use('/scholarship', scholarshipRoutes);
+
+// Programs routes
+router.use('/programs', programRoutes);
 
 // Document routes
 router.use('/documents', documentRoutes);

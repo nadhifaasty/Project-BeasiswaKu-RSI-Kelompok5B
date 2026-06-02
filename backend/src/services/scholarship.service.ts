@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '../config/supabase';
 
+import { programService } from './program.service';
+
 // ============ TYPES ============
 
 export interface CreateApplicationPayload {
@@ -12,33 +14,6 @@ export interface CreateApplicationPayload {
 // ============ SERVICE ============
 
 class ScholarshipService {
-  /**
-   * Get all active scholarship programs
-   */
-  async getPrograms() {
-    const { data, error } = await supabaseAdmin
-      .from('scholarship_programs')
-      .select('*')
-      .order('deadline', { ascending: true });
-
-    if (error) throw new Error(`Gagal mengambil data program: ${error.message}`);
-    return data;
-  }
-
-  /**
-   * Get a single program by ID
-   */
-  async getProgramById(programId: string) {
-    const { data, error } = await supabaseAdmin
-      .from('scholarship_programs')
-      .select('*')
-      .eq('id', programId)
-      .single();
-
-    if (error) throw new Error(`Program tidak ditemukan.`);
-    return data;
-  }
-
   /**
    * Get all applications for a user
    */
@@ -91,8 +66,8 @@ class ScholarshipService {
     const { program_id, ipk, esai_motivasi, prestasi_non_akademik } = payload;
 
     // 1. Check if program exists and is active
-    const program = await this.getProgramById(program_id);
-    if (program.status !== 'aktif') {
+    const program = await programService.getProgramById(program_id);
+    if (program.status !== 'OPEN') {
       throw new Error('Program beasiswa ini sudah ditutup.');
     }
 
