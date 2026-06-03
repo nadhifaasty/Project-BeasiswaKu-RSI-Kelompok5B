@@ -21,6 +21,7 @@ function AdminDashboardPage() {
   const [applications, setApplications] = useState<AdminApplication[]>([])
   const [stats, setStats] = useState({ total: 0, pending: 0, verified: 0, accepted: 0 })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
@@ -29,7 +30,8 @@ function AdminDashboardPage() {
   async function loadData() {
     try {
       setLoading(true)
-      const res = await fetchApi<ApiResponse<AdminApplication[]>>('/scholarship/admin/applications')
+      setError(null)
+      const res = await fetchApi<ApiResponse<AdminApplication[]>>('/applications')
       const apps = res.data
       setApplications(apps)
 
@@ -39,8 +41,10 @@ function AdminDashboardPage() {
         verified: apps.filter((a) => a.status === 'TERVERIFIKASI').length,
         accepted: apps.filter((a) => a.status === 'DITERIMA').length,
       })
-    } catch {
-      // silently fail
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Gagal memuat data'
+      console.error('AdminDashboard loadData error:', err)
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -65,6 +69,28 @@ function AdminDashboardPage() {
           {[1, 2, 3, 4].map((i) => <div key={i} className="h-24 bg-gray-200 rounded-xl" />)}
         </div>
         <div className="h-64 bg-gray-200 rounded-xl" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-primary">Admin Dashboard</h1>
+            <p className="text-sm text-gray-500">Selamat datang kembali!</p>
+          </div>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={loadData}
+            className="bg-primary text-secondary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-light transition"
+          >
+            Coba Lagi
+          </button>
+        </div>
       </div>
     )
   }

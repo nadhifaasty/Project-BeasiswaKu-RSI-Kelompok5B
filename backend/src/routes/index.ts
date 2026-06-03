@@ -3,7 +3,7 @@ import { healthCheck } from '../controllers';
 import { supabaseAdmin } from '../config/supabase';
 import authRoutes from './auth.routes';
 import biodataRoutes from './biodata.routes';
-import scholarshipRoutes from './scholarship.routes';
+import applicationRoutes from './application.routes';
 import documentRoutes from './document.routes';
 import programRoutes from './program.routes';
 import adminRoutes from './admin.routes';
@@ -19,8 +19,8 @@ router.use('/auth', authRoutes);
 // Biodata routes
 router.use('/biodata', biodataRoutes);
 
-// Scholarship routes
-router.use('/scholarship', scholarshipRoutes);
+// Applications routes (TSD Module 4)
+router.use('/applications', applicationRoutes);
 
 // Programs routes
 router.use('/programs', programRoutes);
@@ -29,8 +29,6 @@ router.use('/programs', programRoutes);
 router.use('/documents', documentRoutes);
 
 // Admin / Super Admin routes
-// Sesuai konvensi user menggunakan /super-admin dan TSD menggunakan /api/v1/admin
-// Kita mount ke /super-admin dan /admin sebagai alias jika diperlukan
 router.use('/admin', adminRoutes);
 router.use('/super-admin', adminRoutes);
 

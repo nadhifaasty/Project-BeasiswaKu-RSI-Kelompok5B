@@ -14,6 +14,8 @@ export interface ScholarshipProgram {
   created_at: string
 }
 
+export type ApplicationStatus = 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
+
 export interface Application {
   id: string
   user_id: string
@@ -22,7 +24,7 @@ export interface Application {
   ipk: number
   esai_motivasi: string
   prestasi_non_akademik: string | null
-  status: 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
+  status: ApplicationStatus
   skor_kelayakan: number | null
   catatan_admin: string | null
   created_at: string
@@ -33,6 +35,16 @@ export interface Application {
     deadline: string
     status: string
   }
+}
+
+export interface ApplicationHistory {
+  id: string
+  application_id: string
+  old_status: string | null
+  new_status: string
+  catatan_admin: string | null
+  changed_by: string | null
+  created_at: string
 }
 
 export interface CreateApplicationPayload {
@@ -51,27 +63,32 @@ interface ApiResponse<T> {
 // ============ API CALLS ============
 
 export async function getPrograms(): Promise<ScholarshipProgram[]> {
-  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/scholarship/programs')
+  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/programs')
   return res.data
 }
 
 export async function getProgramById(id: string): Promise<ScholarshipProgram> {
-  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/scholarship/programs/${id}`)
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/programs/${id}`)
   return res.data
 }
 
 export async function getUserApplications(): Promise<Application[]> {
-  const res = await fetchApi<ApiResponse<Application[]>>('/scholarship/applications')
+  const res = await fetchApi<ApiResponse<Application[]>>('/applications/my')
   return res.data
 }
 
 export async function getApplicationById(id: string): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>(`/scholarship/applications/${id}`)
+  const res = await fetchApi<ApiResponse<Application>>(`/applications/${id}`)
+  return res.data
+}
+
+export async function getApplicationHistory(id: string): Promise<ApplicationHistory[]> {
+  const res = await fetchApi<ApiResponse<ApplicationHistory[]>>(`/applications/${id}/history`)
   return res.data
 }
 
 export async function createApplication(payload: CreateApplicationPayload): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>('/scholarship/applications', {
+  const res = await fetchApi<ApiResponse<Application>>('/applications', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

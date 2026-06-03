@@ -9,6 +9,7 @@ import VerifikasiEmailPage from './pages/VerifikasiEmailPage'
 import DashboardPage from './pages/DashboardPage'
 import BiodataPage from './pages/BiodataPage'
 import PengajuanPage from './pages/PengajuanPage'
+import StatusPengajuanPage from './pages/StatusPengajuanPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPengajuanPage from './pages/AdminPengajuanPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
@@ -31,6 +32,8 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/biodata" element={<BiodataPage />} />
           <Route path="/pengajuan" element={<PengajuanPage />} />
+          <Route path="/dokumen/status" element={<StatusPengajuanPage />} />
+          <Route path="/dokumen/status/:id" element={<StatusPengajuanPage />} />
         </Route>
       </Route>
 

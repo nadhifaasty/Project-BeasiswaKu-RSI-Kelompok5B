@@ -75,6 +75,17 @@ export const getAllApplications = async (req: AuthenticatedRequest, res: Respons
   }
 };
 
+export const getApplicationHistory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { id } = req.params;
+    const data = await scholarshipService.getApplicationHistory(id, userId);
+    sendSuccess(res, data, 'Riwayat status pengajuan berhasil diambil.');
+  } catch (error: any) {
+    sendError(res, error.message, 404);
+  }
+};
+
 export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;

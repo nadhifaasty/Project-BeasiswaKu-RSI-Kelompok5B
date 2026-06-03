@@ -67,7 +67,7 @@ class ScholarshipService {
 
     // 1. Check if program exists and is active
     const program = await programService.getProgramById(program_id);
-    if (program.status !== 'OPEN') {
+    if (program.status !== 'aktif') {
       throw new Error('Program beasiswa ini sudah ditutup.');
     }
 
@@ -153,6 +153,29 @@ class ScholarshipService {
 
     const { data, error } = await query;
     if (error) throw new Error(`Gagal mengambil data pengajuan: ${error.message}`);
+    return data;
+  }
+
+  /**
+   * Get application status history for timeline
+   */
+  async getApplicationHistory(applicationId: string, userId: string) {
+    const { data: app, error: appError } = await supabaseAdmin
+      .from('applications')
+      .select('id, user_id')
+      .eq('id', applicationId)
+      .single();
+
+    if (appError || !app) throw new Error('Pengajuan tidak ditemukan.');
+    if (app.user_id !== userId) throw new Error('Anda tidak berhak mengakses riwayat ini.');
+
+    const { data, error } = await supabaseAdmin
+      .from('application_history')
+      .select('*')
+      .eq('application_id', applicationId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw new Error(`Gagal mengambil riwayat status: ${error.message}`);
     return data;
   }
 
