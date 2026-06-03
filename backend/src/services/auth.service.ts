@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { supabaseAdmin } from '../config/supabase';
+import { supabase, supabaseAdmin } from '../config/supabase';
 import { RegisterPayload, LoginPayload, JwtPayload, TokenPair, ProfileRow } from '../types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'beasiswaku-secret-key-change-in-production';
@@ -125,7 +125,7 @@ class AuthService {
     }
 
     // 2. Authenticate with Supabase Auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });

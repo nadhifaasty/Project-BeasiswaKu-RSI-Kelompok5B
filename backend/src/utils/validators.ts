@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 export const createProgramSchema = z.object({
-  name: z.string({ required_error: "Nama program wajib diisi" }).min(1, "Nama program wajib diisi"),
-  target_level: z.enum(['SMA', 'PERGURUAN_TINGGI'], { required_error: "Target sasaran wajib diisi", invalid_type_error: "Target sasaran tidak valid" }),
-  nominal: z.number({ required_error: "Nominal wajib diisi" }).int().positive("Nominal harus lebih dari 0"),
-  quota: z.number({ required_error: "Kuota wajib diisi" }).int().positive("Kuota harus lebih dari 0"),
-  deadline: z.string({ required_error: "Deadline wajib diisi" }).refine((val) => {
+  name: z.string({ message: "Nama program wajib diisi" }).min(1, "Nama program wajib diisi"),
+  target_level: z.enum(['SMA', 'PERGURUAN_TINGGI'], { message: "Target sasaran wajib diisi" }),
+  nominal: z.number({ message: "Nominal wajib diisi" }).int().positive("Nominal harus lebih dari 0"),
+  quota: z.number({ message: "Kuota wajib diisi" }).int().positive("Kuota harus lebih dari 0"),
+  deadline: z.string({ message: "Deadline wajib diisi" }).refine((val) => {
     const date = new Date(val);
     return !isNaN(date.getTime()) && date > new Date();
   }, { message: "Deadline harus valid dan setelah hari ini" }),
@@ -16,5 +16,5 @@ export const createProgramSchema = z.object({
 export const updateProgramSchema = createProgramSchema.partial();
 
 export const updateProgramStatusSchema = z.object({
-  status: z.enum(['OPEN', 'CLOSED', 'DRAFT'], { required_error: "Status wajib diisi", invalid_type_error: "Status tidak valid" }),
+  status: z.enum(['OPEN', 'CLOSED', 'DRAFT'], { message: "Status wajib diisi" }),
 });

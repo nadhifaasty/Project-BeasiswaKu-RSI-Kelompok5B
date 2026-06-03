@@ -6,11 +6,18 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import VerifikasiEmailPage from './pages/VerifikasiEmailPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import BiodataPage from './pages/BiodataPage'
 import PengajuanPage from './pages/PengajuanPage'
+import StatusTrackingPage from './pages/StatusTrackingPage'
+import SiswaLaporanDanaPage from './pages/SiswaLaporanDanaPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPengajuanPage from './pages/AdminPengajuanPage'
+import SelectionPage from './pages/admin/SelectionPage'
+import AdminLaporanDanaPage from './pages/admin/AdminLaporanDanaPage'
+import AuditLogPage from './pages/admin/AuditLogPage'
+import EvaluationsPage from './pages/admin/EvaluationsPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 function App() {
@@ -22,6 +29,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/daftar" element={<RegisterPage />} />
         <Route path="/verifikasi-email" element={<VerifikasiEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 
@@ -31,6 +39,8 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/biodata" element={<BiodataPage />} />
           <Route path="/pengajuan" element={<PengajuanPage />} />
+          <Route path="/lacak-status" element={<StatusTrackingPage />} />
+          <Route path="/laporan-dana" element={<SiswaLaporanDanaPage />} />
         </Route>
       </Route>
 
@@ -39,6 +49,12 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/pengajuan" element={<AdminPengajuanPage />} />
+          <Route path="/admin/seleksi" element={<SelectionPage />} />
+          <Route path="/admin/laporan-dana" element={<AdminLaporanDanaPage />} />
+          <Route path="/admin/evaluasi" element={<EvaluationsPage />} />
+          <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+            <Route path="/admin/audit-log" element={<AuditLogPage />} />
+          </Route>
         </Route>
       </Route>
     </Routes>

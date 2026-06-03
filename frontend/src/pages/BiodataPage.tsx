@@ -82,7 +82,7 @@ function Field({
   onChange: (v: string) => void
   placeholder?: string
   type?: string
-} & React.InputHTMLAttributes<HTMLInputElement>) {
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'>) {
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
@@ -178,7 +178,7 @@ function BiodataPage() {
       }
       if (data.alamat) { setAlamat(data.alamat); setFilled((f) => ({ ...f, alamat: true })) }
       if (data.orang_tua) { setOrangTua(data.orang_tua); setFilled((f) => ({ ...f, 'orang-tua': true })) }
-      if (data.akademik) { setAkademik({ jenjang: 'SMA/SMK/MA', ...data.akademik }); setFilled((f) => ({ ...f, akademik: true })) }
+      if (data.akademik) { setAkademik({ ...data.akademik, jenjang: data.akademik.jenjang || 'SMA/SMK/MA' }); setFilled((f) => ({ ...f, akademik: true })) }
     } catch {
       setMessage({ type: 'error', text: 'Gagal memuat biodata.' })
     } finally {

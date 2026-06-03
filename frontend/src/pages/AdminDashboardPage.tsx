@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
+import SADashboardPage from './admin/SADashboardPage'
 
 interface AdminApplication {
   id: string
@@ -18,13 +20,18 @@ interface ApiResponse<T> {
 }
 
 function AdminDashboardPage() {
+  const { user } = useAuth()
   const [applications, setApplications] = useState<AdminApplication[]>([])
   const [stats, setStats] = useState({ total: 0, pending: 0, verified: 0, accepted: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (user?.role === 'super_admin') {
+      setLoading(false)
+      return
+    }
     loadData()
-  }, [])
+  }, [user])
 
   async function loadData() {
     try {
@@ -55,6 +62,10 @@ function AdminDashboardPage() {
       case 'REVISI': return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Revision</span>
       default: return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{status}</span>
     }
+  }
+
+  if (user?.role === 'super_admin') {
+    return <SADashboardPage />
   }
 
   if (loading) {

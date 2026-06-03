@@ -3,6 +3,7 @@ export { default as Badge } from './Badge'
 export { default as TableSkeleton } from './TableSkeleton'
 export { default as Pagination } from './Pagination'
 export { default as ProtectedRoute } from './ProtectedRoute'
+export { default as ErrorBoundary } from './ErrorBoundary'
 
 export type { Column, TableProps, SortDirection } from './Table'
 export type { BadgeProps, BadgeStatus } from './Badge'

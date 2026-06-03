@@ -145,3 +145,22 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
     sendError(res, error.message, 401);
   }
 };
+
+/**
+ * POST /auth/forgot-password
+ * Simulate sending password reset email
+ */
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      sendError(res, 'Email wajib diisi.', 400);
+      return;
+    }
+
+    sendSuccess(res, null, 'Link pemulihan kata sandi berhasil dikirim ke email Anda.');
+  } catch (error: any) {
+    sendError(res, error.message, 500);
+  }
+};
