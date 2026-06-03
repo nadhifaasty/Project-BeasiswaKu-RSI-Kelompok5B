@@ -40,7 +40,8 @@ export const getUploadUrl = async (req: AuthenticatedRequest, res: Response): Pr
     }
 
     const data = await documentService.getUploadUrl(userId, application_id, jenis, file_name);
-    sendSuccess(res, data, 'Upload URL berhasil dibuat.');
+    const publicUrl = documentService.getPublicUrl(data.path);
+    sendSuccess(res, { ...data, publicUrl }, 'Upload URL berhasil dibuat.');
   } catch (error: any) {
     sendError(res, error.message, 500);
   }

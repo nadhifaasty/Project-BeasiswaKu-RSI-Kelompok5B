@@ -6,6 +6,11 @@ import { supabaseAdmin } from '../config/supabase';
 async function seed() {
   console.log('🌱 Seeding fully-featured testing dataset...\n');
 
+  // Clean up old reports and selections to ensure clean E2E testing
+  console.log('🧹 Clearing old fund reports and selection results...');
+  await supabaseAdmin.from('fund_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  await supabaseAdmin.from('selection_results').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
   // 1. Get or Create a Scholarship Program
   let { data: programs, error: progError } = await supabaseAdmin
     .from('scholarship_programs')

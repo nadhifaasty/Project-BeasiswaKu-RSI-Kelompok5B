@@ -371,6 +371,8 @@ function FormPribadi({ data, onChange }: { data: BiodataPribadi; onChange: (d: B
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <Field label="Nama Lengkap" value={data.nama_lengkap} onChange={(v) => onChange({ ...data, nama_lengkap: v })} placeholder="Budi Santoso" />
       <Field label="NIM / NISN" value={data.nim_nisn} onChange={(v) => onChange({ ...data, nim_nisn: v })} placeholder="12345678" />
+      <Field label="Email" type="email" value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="budi@example.com" disabled />
+      <Field label="Nomor HP" type="tel" value={data.nomor_hp || ''} onChange={(v) => onChange({ ...data, nomor_hp: v })} placeholder="081234567890" />
       <Field label="Tempat Lahir" value={data.tempat_lahir || ''} onChange={(v) => onChange({ ...data, tempat_lahir: v })} placeholder="Contoh: Jakarta" />
       <Field label="Tanggal Lahir" type="date" value={data.tanggal_lahir || ''} onChange={(v) => onChange({ ...data, tanggal_lahir: v })} />
       <div>

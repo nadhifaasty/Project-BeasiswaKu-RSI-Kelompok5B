@@ -52,7 +52,7 @@ class AuthService {
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm for development (set to false in production with custom SMTP)
+      email_confirm: false, // Set to false to trigger verification email
       user_metadata: {
         nama_lengkap,
         nim_nisn,
