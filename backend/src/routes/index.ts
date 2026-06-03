@@ -6,6 +6,7 @@ import biodataRoutes from './biodata.routes';
 import scholarshipRoutes from './scholarship.routes';
 import documentRoutes from './document.routes';
 import programRoutes from './program.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
@@ -26,6 +27,12 @@ router.use('/programs', programRoutes);
 
 // Document routes
 router.use('/documents', documentRoutes);
+
+// Admin / Super Admin routes
+// Sesuai konvensi user menggunakan /super-admin dan TSD menggunakan /api/v1/admin
+// Kita mount ke /super-admin dan /admin sebagai alias jika diperlukan
+router.use('/admin', adminRoutes);
+router.use('/super-admin', adminRoutes);
 
 // Supabase connection test
 router.get('/supabase-test', async (_req, res) => {

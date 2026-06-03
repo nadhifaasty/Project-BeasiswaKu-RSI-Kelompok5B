@@ -32,7 +32,7 @@ export const createProgram = async (req: Request, res: Response): Promise<void> 
     sendSuccess(res, data, 'Program beasiswa berhasil dibuat!', 201);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map((e) => e.message).join(', ');
+      const errorMessages = error.issues.map((e) => e.message).join(', ');
       sendError(res, errorMessages, 400);
       return;
     }
@@ -57,7 +57,7 @@ export const updateProgram = async (req: Request, res: Response): Promise<void> 
     sendSuccess(res, data, 'Program beasiswa berhasil diperbarui.');
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map((e) => e.message).join(', ');
+      const errorMessages = error.issues.map((e) => e.message).join(', ');
       sendError(res, errorMessages, 400);
       return;
     }
@@ -77,7 +77,7 @@ export const updateProgramStatus = async (req: Request, res: Response): Promise<
     sendSuccess(res, data, 'Status program berhasil diperbarui.');
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map((e) => e.message).join(', ');
+      const errorMessages = error.issues.map((e) => e.message).join(', ');
       sendError(res, errorMessages, 400);
       return;
     }

@@ -173,9 +173,17 @@ alter table public.selection_results enable row level security;
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete set null,
+  user_email text,
+  user_role text,
   aksi text not null,
+  resource_type text,
+  resource_id text,
+  old_values jsonb,
+  new_values jsonb,
   level text not null default 'INFO' check (level in ('INFO', 'WARNING', 'ERROR')),
   ip_address text,
+  user_agent text,
+  session_id text,
   created_at timestamptz not null default now()
 );
 alter table public.audit_logs enable row level security;
@@ -225,3 +233,12 @@ alter table public.biodata_pribadi add column if not exists agama text;
 
 alter table public.biodata_alamat add column if not exists rt_rw text;
 alter table public.biodata_alamat add column if not exists kelurahan text;
+
+alter table public.audit_logs add column if not exists user_email text;
+alter table public.audit_logs add column if not exists user_role text;
+alter table public.audit_logs add column if not exists resource_type text;
+alter table public.audit_logs add column if not exists resource_id text;
+alter table public.audit_logs add column if not exists old_values jsonb;
+alter table public.audit_logs add column if not exists new_values jsonb;
+alter table public.audit_logs add column if not exists user_agent text;
+alter table public.audit_logs add column if not exists session_id text;
