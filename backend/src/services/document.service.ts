@@ -20,7 +20,7 @@ export async function getByApplication(applicationId: string, userId: string) {
 }
 
 export async function getUploadUrl(userId: string, applicationId: string, jenis: DocumentType, fileName: string) {
-  const ext = fileName.split('.').pop() || 'pdf';
+  const ext = fileName.split('.').pop() || '';
   const path = `${userId}/${applicationId}/${jenis}.${ext}`;
 
   const { data, error } = await supabaseAdmin.storage.from('documents').createSignedUploadUrl(path);

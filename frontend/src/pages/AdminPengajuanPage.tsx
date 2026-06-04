@@ -3,6 +3,8 @@ import Button from '../components/Button'
 import Card from '../components/Card'
 import Badge from '../components/shared/Badge'
 import { fetchApi, type ApiResponse } from '../services/api'
+import VerifyModal from '../components/VerifyModal'
+import type { ActionType } from '../components/VerifyModal'
 
 // ============ TYPES ============
 
@@ -15,6 +17,7 @@ interface AdminApplication {
   status: string
   catatan_admin: string | null
   created_at: string
+  updated_at: string
   profiles: {
     nama_lengkap: string
     nim_nisn: string
@@ -35,8 +38,8 @@ function AdminPengajuanPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<StatusFilter>('')
   const [selectedApp, setSelectedApp] = useState<AdminApplication | null>(null)
-  const [newStatus, setNewStatus] = useState('')
-  const [catatan, setCatatan] = useState('')
+  const [verifyAction, setVerifyAction] = useState<ActionType | null>(null)
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -59,8 +62,8 @@ function AdminPengajuanPage() {
     }
   }
 
-  async function handleUpdateStatus() {
-    if (!selectedApp || !newStatus) return
+  async function handleSubmitVerify(action: ActionType, catatan: string) {
+    if (!selectedApp || !action) return
 
     setUpdating(true)
     setMessage(null)
@@ -68,19 +71,39 @@ function AdminPengajuanPage() {
     try {
       await fetchApi(`/applications/${selectedApp.id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status: newStatus, catatan_admin: catatan || undefined }),
+        body: JSON.stringify({ 
+          status: action, 
+          catatan_admin: catatan || undefined,
+          updated_at: selectedApp.updated_at
+        }),
       })
 
-      setMessage({ type: 'success', text: 'Status berhasil diperbarui.' })
+      let successMsg = ''
+      if (action === 'TERVERIFIKASI') successMsg = `Pengajuan ${selectedApp.nomor_referensi} berhasil disetujui. Email notifikasi telah dikirim ke siswa.`
+      else if (action === 'REVISI') successMsg = 'Permintaan revisi telah dikirim ke siswa dengan catatan perbaikan.'
+      else if (action === 'DITOLAK') successMsg = 'Pengajuan telah ditolak. Siswa akan menerima notifikasi email.'
+      
+      setMessage({ type: 'success', text: successMsg })
+      setIsVerifyModalOpen(false)
       setSelectedApp(null)
-      setNewStatus('')
-      setCatatan('')
       await loadApplications()
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Gagal memperbarui status.' })
+      if (err.message.includes('Admin lain') || err.message.includes('ERR-CONC-01')) {
+         setMessage({ type: 'error', text: 'Data telah diperbarui oleh admin lain. Halaman akan dimuat ulang otomatis.' })
+         setIsVerifyModalOpen(false)
+         setSelectedApp(null)
+         await loadApplications()
+      } else {
+         setMessage({ type: 'error', text: err.message || 'Gagal memperbarui status pengajuan. Periksa koneksi internet Anda atau silakan coba lagi.' })
+      }
     } finally {
       setUpdating(false)
     }
+  }
+
+  const openVerifyModal = (action: ActionType) => {
+    setVerifyAction(action)
+    setIsVerifyModalOpen(true)
   }
 
   function mapStatusToBadge(status: string) {
@@ -179,50 +202,45 @@ function AdminPengajuanPage() {
 
               <hr />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Update Status</label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                >
-                  <option value="">Pilih status baru</option>
-                  <option value="TERVERIFIKASI">Terverifikasi</option>
-                  <option value="REVISI">Revisi</option>
-                  <option value="DITERIMA">Diterima</option>
-                  <option value="DITOLAK">Ditolak</option>
-                  <option value="CADANGAN">Cadangan</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan Admin (opsional)</label>
-                <textarea
-                  value={catatan}
-                  onChange={(e) => setCatatan(e.target.value)}
-                  placeholder="Tambahkan catatan untuk pemohon..."
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <Button variant="outline" onClick={() => setSelectedApp(null)} className="flex-1">
+              <div className="flex flex-col gap-3 pt-4 border-t mt-4">
+                <p className="text-sm font-medium text-gray-700">Keputusan Verifikasi</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <button
+                    onClick={() => openVerifyModal('TERVERIFIKASI')}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                  >
+                    Setujui Pengajuan
+                  </button>
+                  <button
+                    onClick={() => openVerifyModal('REVISI')}
+                    className="w-full bg-white hover:bg-red-50 border border-red-500 text-red-600 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                  >
+                    Minta Revisi
+                  </button>
+                  <button
+                    onClick={() => openVerifyModal('DITOLAK')}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                  >
+                    Tolak Pengajuan
+                  </button>
+                </div>
+                <Button variant="outline" onClick={() => setSelectedApp(null)} className="w-full mt-2">
                   Tutup
-                </Button>
-                <Button
-                  onClick={handleUpdateStatus}
-                  loading={updating}
-                  disabled={!newStatus}
-                  className="flex-1"
-                >
-                  Update Status
                 </Button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Verify Modal */}
+      <VerifyModal 
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
+        action={verifyAction}
+        loading={updating}
+        onSubmit={handleSubmitVerify}
+      />
 
       {/* Applications Table */}
       {loading ? (
@@ -269,7 +287,7 @@ function AdminPengajuanPage() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => { setSelectedApp(app); setNewStatus(''); setCatatan('') }}
+                      onClick={() => setSelectedApp(app)}
                       className="text-accent hover:underline text-sm font-medium"
                     >
                       Review

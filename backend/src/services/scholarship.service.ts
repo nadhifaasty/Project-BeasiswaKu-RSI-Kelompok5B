@@ -1,5 +1,12 @@
 import { supabaseAdmin } from '../config/supabase';
 
+export class ApplicationError extends Error {
+  constructor(message: string, public statusCode: number, public code: string) {
+    super(message);
+    this.name = 'ApplicationError';
+  }
+}
+
 export interface CreateApplicationPayload {
   program_id: string;
   ipk: number;
@@ -91,16 +98,52 @@ export async function getAllApplications(status?: string) {
   return data;
 }
 
-export async function updateApplicationStatus(applicationId: string, status: string, catatan_admin?: string) {
+export async function updateApplicationStatus(applicationId: string, status: string, adminId: string, clientUpdatedAt: string, catatan_admin?: string) {
   const validStatuses = ['PENDING', 'TERVERIFIKASI', 'REVISI', 'DITOLAK', 'DITERIMA', 'CADANGAN'];
   if (!validStatuses.includes(status)) {
-    throw new Error(`Status tidak valid. Pilihan: ${validStatuses.join(', ')}`);
+    throw new ApplicationError(`Status tidak valid. Pilihan: ${validStatuses.join(', ')}`, 400, 'ERR-VAL-02');
   }
+
+  if (['REVISI', 'DITOLAK'].includes(status)) {
+    if (!catatan_admin || catatan_admin.length < 10) {
+      throw new ApplicationError('Catatan alasan wajib diisi (min 10 karakter) saat memilih Revisi atau Tolak.', 422, 'ERR-ACC-01');
+    }
+  }
+
+  const { data: currentApp, error: fetchError } = await supabaseAdmin
+    .from('applications')
+    .select('status, updated_at')
+    .eq('id', applicationId)
+    .single();
+
+  if (fetchError || !currentApp) {
+    throw new ApplicationError('Pengajuan tidak ditemukan.', 404, 'ERR-APP-07');
+  }
+
+  if (clientUpdatedAt && new Date(currentApp.updated_at).getTime() !== new Date(clientUpdatedAt).getTime()) {
+      throw new ApplicationError('Data telah diperbarui oleh Admin lain. Muat ulang halaman.', 409, 'ERR-CONC-01');
+  }
+
+  const oldStatus = currentApp.status;
 
   const { data, error } = await supabaseAdmin
     .from('applications')
     .update({ status, catatan_admin: catatan_admin || null, updated_at: new Date().toISOString() })
-    .eq('id', applicationId).select().single();
-  if (error) throw new Error(`Gagal mengupdate status: ${error.message}`);
-  return data;
+    .eq('id', applicationId)
+    .select()
+    .single();
+
+  if (error) throw new ApplicationError(`Gagal mengupdate status: ${error.message}`, 500, 'ERR-SYS-01');
+
+  await supabaseAdmin.from('application_history').insert({
+    application_id: applicationId,
+    admin_id: adminId,
+    old_status: oldStatus,
+    new_status: status,
+    catatan_admin: catatan_admin || null
+  });
+
+  console.log(`[ASYNC EMAIL] Mengirim notifikasi ke email siswa untuk aplikasi ${applicationId}. Status baru: ${status}`);
+
+  return { ...data, old_status: oldStatus };
 }

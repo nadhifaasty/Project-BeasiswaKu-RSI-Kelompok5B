@@ -146,3 +146,43 @@ insert into public.scholarship_programs (nama, deskripsi, monthly_amount, deadli
   ('Beasiswa SMA', 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.', 750000.00, '2026-01-25', 50, 50),
   ('Beasiswa Perguruan Tinggi', 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.', 1000000.00, '2026-01-25', 100, 100)
 on conflict do nothing;
+
+-- ============================================
+-- ADDITIONS FOR VERIFICATION FEATURE (FSD-2.4.3)
+-- ============================================
+
+-- 9. APPLICATION HISTORY (log perubahan status pengajuan)
+create table if not exists public.application_history (
+  id uuid primary key default gen_random_uuid(),
+  application_id uuid references public.applications(id) on delete cascade not null,
+  admin_id uuid references public.profiles(id) on delete set null,
+  old_status text not null,
+  new_status text not null,
+  catatan_admin text,
+  created_at timestamptz not null default now()
+);
+alter table public.application_history enable row level security;
+
+-- Trigger Function untuk audit_logs (Mencatat perubahan status)
+create or replace function public.fn_audit_application_status()
+returns trigger as $$
+begin
+  if old.status is distinct from new.status then
+    insert into public.audit_logs (user_id, aksi, level, created_at)
+    values (
+      -- Asumsi admin_id dari update context (aplikasi akan menulis history terpisah)
+      null, 
+      'STATUS_CHANGED: ' || new.nomor_referensi || ' from ' || old.status || ' to ' || new.status,
+      'INFO',
+      now()
+    );
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists trg_audit_applications on public.applications;
+create trigger trg_audit_applications
+  after update on public.applications
+  for each row
+  execute function public.fn_audit_application_status();

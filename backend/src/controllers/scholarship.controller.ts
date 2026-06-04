@@ -86,16 +86,29 @@ export const getAllApplications = async (req: AuthenticatedRequest, res: Respons
 export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { status, catatan_admin } = req.body;
+    const { status, catatan_admin, updated_at } = req.body;
+    const adminId = req.user!.userId;
 
     if (!status) {
-      res.status(400).json({ success: false, message: 'Status wajib diisi.' });
+      res.status(400).json({ status: 'error', error_code: 'ERR-VAL-01', message: 'Status wajib diisi.' });
       return;
     }
 
-    const data = await scholarshipService.updateApplicationStatus(id, status, catatan_admin);
-    res.json({ success: true, message: 'Status pengajuan berhasil diperbarui.', data });
+    const data = await scholarshipService.updateApplicationStatus(id, status, adminId, updated_at, catatan_admin);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        application_id: data.id,
+        old_status: data.old_status,
+        new_status: data.status
+      },
+      message: 'Status pengajuan berhasil diperbarui'
+    });
   } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(error.statusCode || 500).json({
+      status: 'error',
+      error_code: error.code || 'ERR-SYS-01',
+      message: error.message
+    });
   }
 };
