@@ -7,67 +7,82 @@ async function seed() {
   console.log('🌱 Seeding fully-featured testing dataset...\n');
 
   // Clean up old reports and selections to ensure clean E2E testing
-  console.log('🧹 Clearing old fund reports and selection results...');
+  console.log('🧹 Clearing old database records...');
   await supabaseAdmin.from('fund_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   await supabaseAdmin.from('selection_results').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  await supabaseAdmin.from('applications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  await supabaseAdmin.from('scholarship_programs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-  // 1. Get or Create a Scholarship Program
-  let { data: programs, error: progError } = await supabaseAdmin
+  // 1. Create two scholarship programs: SMA and Perguruan Tinggi (50 quota each)
+  console.log('➕ Membuat program beasiswa beasiswaku default...');
+  const futureDeadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days from now
+
+  const { data: smaProg, error: createSmaErr } = await supabaseAdmin
     .from('scholarship_programs')
-    .select('id, nama');
+    .insert({
+      nama: 'Beasiswa SMA',
+      monthly_amount: 750000,
+      kuota: 50,
+      sisa_kuota: 50,
+      deadline: futureDeadline,
+      status: 'aktif',
+      deskripsi: 'Diperuntukkan bagi siswa aktif SMA/SMK/MA sederajat. Berbasis kelayakan akademik dan kondisi ekonomi keluarga.',
+    })
+    .select()
+    .single();
 
-  if (progError) {
-    console.error('❌ Gagal mengambil program:', progError.message);
+  if (createSmaErr) {
+    console.error('❌ Gagal membuat program SMA:', createSmaErr.message);
     process.exit(1);
   }
 
-  let programId = '';
-  if (!programs || programs.length === 0) {
-    console.log('➕ Membuat program beasiswa beasiswaku default...');
-    const { data: newProg, error: createProgErr } = await supabaseAdmin
-      .from('scholarship_programs')
-      .insert({
-        nama: 'Beasiswa Unggulan Prestasi 2026',
-        target_jenjang: 'PERGURUAN_TINGGI',
-        nominal: '1000000',
-        kuota: 5,
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-        status: 'OPEN',
-        deskripsi: 'Beasiswa prestasi akademik dan keterbatasan ekonomi.',
-      })
-      .select()
-      .single();
+  const { data: collegeProg, error: createCollegeErr } = await supabaseAdmin
+    .from('scholarship_programs')
+    .insert({
+      nama: 'Beasiswa Perguruan Tinggi',
+      monthly_amount: 1000000,
+      kuota: 50,
+      sisa_kuota: 50,
+      deadline: futureDeadline,
+      status: 'aktif',
+      deskripsi: 'Diperuntukkan bagi mahasiswa aktif S1/D3/D4 di PTN maupun PTS. Berbasis IPK dan kondisi ekonomi.',
+    })
+    .select()
+    .single();
 
-    if (createProgErr) {
-      console.error('❌ Gagal membuat program default:', createProgErr.message);
-      process.exit(1);
-    }
-    programId = newProg.id;
-    console.log(`✅ Program default dibuat dengan ID: ${programId}`);
-  } else {
-    programId = programs[0].id;
-    console.log(`ℹ️ Menggunakan program beasiswa yang sudah ada: "${programs[0].nama}" (ID: ${programId})`);
+  if (createCollegeErr) {
+    console.error('❌ Gagal membuat program Perguruan Tinggi:', createCollegeErr.message);
+    process.exit(1);
   }
 
-  // 2. Define 12 Student Accounts with detailed profiles
+  const smaProgramId = smaProg.id;
+  const collegeProgramId = collegeProg.id;
+  console.log(`✅ Program SMA dibuat dengan ID: ${smaProgramId}`);
+  console.log(`✅ Program Perguruan Tinggi dibuat dengan ID: ${collegeProgramId}`);
+
+  // 2. Define 12 Student Accounts (6 College, 6 SMA)
   const students = [
-    { email: 'ani@test.com', name: 'Ani Lestari', nisn: 'NISN0001', ipk: 3.85, income: 1200000, status: 'TERVERIFIKASI', prestasi: 'Juara 1 Debat Nasional' },
-    { email: 'bambang@test.com', name: 'Bambang Pamungkas', nisn: 'NISN0002', ipk: 3.45, income: 2500000, status: 'TERVERIFIKASI', prestasi: 'Pemain Terbaik Futsal Provinsi' },
-    { email: 'citra@test.com', name: 'Citra Dewi', nisn: 'NISN0003', ipk: 3.92, income: 4800000, status: 'TERVERIFIKASI', prestasi: 'Juara 2 OSN Kimia Kabupaten' },
-    { email: 'doni@test.com', name: 'Doni Salman', nisn: 'NISN0004', ipk: 3.12, income: 1500000, status: 'TERVERIFIKASI', prestasi: '' },
-    { email: 'elisa@test.com', name: 'Elisa Fitri', nisn: 'NISN0005', ipk: 3.65, income: 3200000, status: 'TERVERIFIKASI', prestasi: 'Juara Rektor Cup Bulutangkis' },
-    { email: 'fajar@test.com', name: 'Fajar Pratama', nisn: 'NISN0006', ipk: 3.78, income: 1000000, status: 'TERVERIFIKASI', prestasi: '' },
-    { email: 'gina@test.com', name: 'Gina Salsabila', nisn: 'NISN0007', ipk: 3.25, income: 6000000, status: 'TERVERIFIKASI', prestasi: 'Juara Lomba Menulis Provinsi' },
-    { email: 'hendra@test.com', name: 'Hendra Wijaya', nisn: 'NISN0008', ipk: 3.98, income: 1800000, status: 'TERVERIFIKASI', prestasi: 'Ketua BEM Fakultas' },
-    { email: 'indah@test.com', name: 'Indah Permata', nisn: 'NISN0009', ipk: 3.52, income: 2200000, status: 'TERVERIFIKASI', prestasi: '' },
-    { email: 'joko@test.com', name: 'Joko Widodo', nisn: 'NISN0010', ipk: 3.71, income: 1400000, status: 'TERVERIFIKASI', prestasi: '' },
-    { email: 'kartika@test.com', name: 'Kartika Sari', nisn: 'NISN0011', ipk: 3.40, income: 3000000, status: 'PENDING', prestasi: '' },
-    { email: 'lukman@test.com', name: 'Lukman Hakim', nisn: 'NISN0012', ipk: 3.60, income: 7500000, status: 'REVISI', prestasi: '' },
+    // College Students
+    { email: 'ani@test.com', name: 'Ani Lestari', nisn: 'NISN0001', ipk: 3.85, income: 1200000, status: 'TERVERIFIKASI', prestasi: 'Juara 1 Debat Nasional', type: 'COLLEGE' },
+    { email: 'bambang@test.com', name: 'Bambang Pamungkas', nisn: 'NISN0002', ipk: 3.45, income: 2500000, status: 'TERVERIFIKASI', prestasi: 'Pemain Terbaik Futsal Provinsi', type: 'COLLEGE' },
+    { email: 'citra@test.com', name: 'Citra Dewi', nisn: 'NISN0003', ipk: 3.92, income: 4800000, status: 'TERVERIFIKASI', prestasi: 'Juara 2 OSN Kimia Kabupaten', type: 'COLLEGE' },
+    { email: 'hendra@test.com', name: 'Hendra Wijaya', nisn: 'NISN0008', ipk: 3.98, income: 1800000, status: 'TERVERIFIKASI', prestasi: 'Ketua BEM Fakultas', type: 'COLLEGE' },
+    { email: 'indah@test.com', name: 'Indah Permata', nisn: 'NISN0009', ipk: 3.52, income: 2200000, status: 'TERVERIFIKASI', prestasi: '', type: 'COLLEGE' },
+    { email: 'joko@test.com', name: 'Joko Widodo', nisn: 'NISN0010', ipk: 3.71, income: 1400000, status: 'TERVERIFIKASI', prestasi: '', type: 'COLLEGE' },
+
+    // SMA Students
+    { email: 'doni@test.com', name: 'Doni Salman', nisn: 'NISN0004', ipk: 85.00, income: 1500000, status: 'TERVERIFIKASI', prestasi: '', type: 'SMA' },
+    { email: 'elisa@test.com', name: 'Elisa Fitri', nisn: 'NISN0005', ipk: 92.50, income: 3200000, status: 'TERVERIFIKASI', prestasi: 'Juara Rektor Cup Bulutangkis', type: 'SMA' },
+    { email: 'fajar@test.com', name: 'Fajar Pratama', nisn: 'NISN0006', ipk: 78.00, income: 1000000, status: 'TERVERIFIKASI', prestasi: '', type: 'SMA' },
+    { email: 'gina@test.com', name: 'Gina Salsabila', nisn: 'NISN0007', ipk: 88.00, income: 6000000, status: 'TERVERIFIKASI', prestasi: 'Juara Lomba Menulis Provinsi', type: 'SMA' },
+    { email: 'kartika@test.com', name: 'Kartika Sari', nisn: 'NISN0011', ipk: 95.00, income: 3000000, status: 'PENDING', prestasi: '', type: 'SMA' },
+    { email: 'lukman@test.com', name: 'Lukman Hakim', nisn: 'NISN0012', ipk: 80.00, income: 7500000, status: 'REVISI', prestasi: '', type: 'SMA' },
   ];
 
   for (const stud of students) {
     try {
       console.log(`\n⏳ Memproses seeder untuk siswa: ${stud.email}...`);
+      const targetProgramId = stud.type === 'COLLEGE' ? collegeProgramId : smaProgramId;
 
       // a. Create in Auth
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -92,7 +107,7 @@ async function seed() {
             .single();
           
           if (existingProf) {
-            await insertSubCriteriaAndApplication(existingProf.id, stud, programId);
+            await insertSubCriteriaAndApplication(existingProf.id, stud, targetProgramId);
           }
           continue;
         }
@@ -120,7 +135,7 @@ async function seed() {
         continue;
       }
 
-      await insertSubCriteriaAndApplication(userId, stud, programId);
+      await insertSubCriteriaAndApplication(userId, stud, targetProgramId);
       console.log(`✅ Sukses seeding ${stud.name}`);
 
     } catch (err: any) {
@@ -160,9 +175,9 @@ async function insertSubCriteriaAndApplication(userId: string, stud: any, progra
   // 3. Insert/Upsert biodata_akademik
   await supabaseAdmin.from('biodata_akademik').upsert({
     user_id: userId,
-    jenjang: 'PERGURUAN_TINGGI',
-    asal_institusi: 'Universitas Indonesia',
-    program_studi: 'Ilmu Komputer',
+    jenjang: stud.type === 'COLLEGE' ? 'PERGURUAN_TINGGI' : 'SMA/SMK/MA',
+    asal_institusi: stud.type === 'COLLEGE' ? 'Universitas Indonesia' : 'SMA Negeri 1 Jakarta',
+    program_studi: stud.type === 'COLLEGE' ? 'Ilmu Komputer' : 'IPA',
     ipk_nilai: stud.ipk,
   }, { onConflict: 'user_id' });
 
@@ -220,27 +235,27 @@ async function insertSubCriteriaAndApplication(userId: string, stud: any, progra
   }
 
   // 6. Seed Application Documents for Valid Document Scores
-  // 5 mandatory documents: FOTO, KTP_KARTU_PELAJAR, KARTU_KELUARGA, TRANSKRIP_NILAI, SKTM
-  const docTypes = ['FOTO', 'KTP_KARTU_PELAJAR', 'KARTU_KELUARGA', 'TRANSKRIP_NILAI', 'SKTM'];
+  // 5 mandatory documents: foto, ktp, kartu_keluarga, transkrip, sktm
+  const docTypes = ['foto', 'ktp', 'kartu_keluarga', 'transkrip', 'sktm'];
   
   for (const docType of docTypes) {
     const { data: existingDoc } = await supabaseAdmin
       .from('application_documents')
       .select('id')
       .eq('application_id', appId)
-      .eq('document_type', docType)
+      .eq('jenis', docType)
       .single();
 
     if (!existingDoc) {
-      await supabaseAdmin.from('application_documents').insert({
+      const { error: insErr } = await supabaseAdmin.from('application_documents').insert({
         application_id: appId,
-        user_id: userId,
-        document_type: docType,
-        file_path: `documents/${appId}/${docType.toLowerCase()}.pdf`,
-        file_size_kb: 245,
+        jenis: docType,
+        file_url: `https://storage.beasiswaku.com/documents/${appId}/${docType}.pdf`,
         status: 'tervalidasi',
-        is_mandatory: true,
       });
+      if (insErr) {
+        console.error(`❌ Gagal seed document ${docType}:`, insErr.message);
+      }
     } else {
       await supabaseAdmin
         .from('application_documents')

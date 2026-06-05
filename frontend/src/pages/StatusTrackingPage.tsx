@@ -466,7 +466,13 @@ function StatusTrackingPage() {
                 <span className="font-bold text-emerald-600">{app.scholarship_programs?.nominal} / bulan</span>
               </div>
               <div className="flex justify-between">
-                <span>Nilai IPK Anda:</span>
+                <span>
+                  {app.scholarship_programs?.nama?.toLowerCase().includes('perguruan') ||
+                   app.scholarship_programs?.nama?.toLowerCase().includes('mahasiswa') ||
+                   app.scholarship_programs?.nama?.toLowerCase().includes('tinggi')
+                    ? 'Nilai IPK Anda:'
+                    : 'Nilai Rata-rata Anda:'}
+                </span>
                 <span className="font-semibold text-primary">{app.ipk}</span>
               </div>
             </div>

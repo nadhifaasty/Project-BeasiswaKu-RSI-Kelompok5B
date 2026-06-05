@@ -67,7 +67,7 @@ class SelectionService {
       const [acadRes, ortuRes, docsRes] = await Promise.all([
         supabaseAdmin
           .from('biodata_akademik')
-          .select('ipk_nilai')
+          .select('ipk_nilai, jenjang')
           .eq('user_id', userId)
           .maybeSingle(),
         supabaseAdmin
@@ -88,7 +88,11 @@ class SelectionService {
 
       // a. Academic Score (SA)
       const ipk = acad?.ipk_nilai ? Number(acad.ipk_nilai) : Number(app.ipk || 0);
-      const skor_akademik = Math.min(Math.max((ipk / 4.0) * 100, 0), 100);
+      const jenjang = acad?.jenjang || '';
+      const isCollege = jenjang.toLowerCase().includes('perguruan') || jenjang.toUpperCase() === 'PERGURUAN_TINGGI';
+      const skor_akademik = isCollege 
+        ? Math.min(Math.max((ipk / 4.0) * 100, 0), 100)
+        : Math.min(Math.max(ipk, 0), 100);
 
       // b. Economic Score (SE)
       const totalPenghasilan = Number(ortu?.ayah_penghasilan || 0) + Number(ortu?.ibu_penghasilan || 0);

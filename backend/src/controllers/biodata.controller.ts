@@ -152,8 +152,11 @@ export const upsertAkademik = async (req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    if (Number(ipk_nilai) < 0 || Number(ipk_nilai) > 4) {
-      sendError(res, 'IPK/Nilai harus antara 0 dan 4.', 400);
+    const isCollege = jenjang?.toLowerCase().includes('perguruan') || jenjang?.toUpperCase() === 'PERGURUAN_TINGGI';
+    const maxVal = isCollege ? 4 : 100;
+
+    if (Number(ipk_nilai) < 0 || Number(ipk_nilai) > maxVal) {
+      sendError(res, `IPK/Nilai harus antara 0 dan ${maxVal}.`, 400);
       return;
     }
 

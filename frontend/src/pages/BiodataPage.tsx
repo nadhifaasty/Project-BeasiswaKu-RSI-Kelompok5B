@@ -456,6 +456,10 @@ function FormOrangTua({ data, onChange }: { data: BiodataOrangTua; onChange: (d:
 }
 
 function FormAkademik({ data, onChange }: { data: BiodataAkademik; onChange: (d: BiodataAkademik) => void }) {
+  const isCollege = data.jenjang === 'Perguruan Tinggi' || data.jenjang === 'PERGURUAN_TINGGI';
+  const maxVal = isCollege ? 4 : 100;
+  const placeholder = isCollege ? '3.75' : '85.50';
+
   return (
     <div className="space-y-5">
       <div>
@@ -476,10 +480,10 @@ function FormAkademik({ data, onChange }: { data: BiodataAkademik; onChange: (d:
           type="number"
           step="0.01"
           min="0"
-          max="4"
+          max={maxVal}
           value={data.ipk_nilai ? String(data.ipk_nilai) : ''}
           onChange={(v) => onChange({ ...data, ipk_nilai: Number(v) })}
-          placeholder="3.75"
+          placeholder={placeholder}
         />
       </div>
     </div>

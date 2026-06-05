@@ -165,7 +165,13 @@ function AdminPengajuanPage() {
                   <p className="font-medium">{selectedApp.scholarship_programs.nama}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">IPK</p>
+                  <p className="text-gray-500">
+                    {selectedApp.scholarship_programs?.nama?.toLowerCase().includes('perguruan') ||
+                     selectedApp.scholarship_programs?.nama?.toLowerCase().includes('mahasiswa') ||
+                     selectedApp.scholarship_programs?.nama?.toLowerCase().includes('tinggi')
+                      ? 'IPK'
+                      : 'Nilai Rata-rata'}
+                  </p>
                   <p className="font-medium">{selectedApp.ipk}</p>
                 </div>
               </div>
@@ -250,7 +256,7 @@ function AdminPengajuanPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">No. Ref</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Pemohon</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Program</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">IPK</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">IPK / Nilai</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Tanggal</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Aksi</th>

@@ -44,6 +44,28 @@ class DocumentService {
     const ext = fileName.split('.').pop() || 'pdf';
     const path = `${userId}/${applicationId}/${jenis}.${ext}`;
 
+    // Auto-create/ensure bucket exists and has correct allowed mime types
+    try {
+      const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+      const bucket = buckets?.find(b => b.name === 'documents');
+      if (!bucket) {
+        await supabaseAdmin.storage.createBucket('documents', {
+          public: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+        });
+      } else {
+        const mimes = bucket.allowed_mime_types || [];
+        if (!mimes.includes('image/jpeg')) {
+          await supabaseAdmin.storage.updateBucket('documents', {
+            public: true,
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+          });
+        }
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Warning: failed to ensure documents bucket configuration:', err.message);
+    }
+
     const { data, error } = await supabaseAdmin.storage
       .from('documents')
       .createSignedUploadUrl(path);

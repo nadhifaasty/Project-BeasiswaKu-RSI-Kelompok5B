@@ -18,7 +18,7 @@ class DashboardService {
       .select(`
         id,
         scholarship_programs (
-          nominal
+          monthly_amount
         )
       `)
       .eq('status', 'DITERIMA');
@@ -27,12 +27,12 @@ class DashboardService {
 
     const totalAcceptedCount = acceptedApps ? acceptedApps.length : 0;
 
-    // Calculate total funds disbursed: sum of nominal for all accepted applications
+    // Calculate total funds disbursed: sum of monthly_amount for all accepted applications
     let totalFundsDisbursed = 0;
     acceptedApps?.forEach((app: any) => {
       if (app.scholarship_programs) {
-        // Strip non-digit characters if nominal is a string like "Rp 1.000.000"
-        const nominalStr = String(app.scholarship_programs.nominal || '0');
+        // Strip non-digit characters if monthly_amount is a string or number
+        const nominalStr = String(app.scholarship_programs.monthly_amount || '0');
         const nominalVal = Number(nominalStr.replace(/\D/g, ''));
         totalFundsDisbursed += nominalVal;
       }
@@ -47,10 +47,12 @@ class DashboardService {
     if (errVerified) throw new Error(`Gagal mengambil data terverifikasi: ${errVerified.message}`);
 
     // 4. Fetch total active programs count
+    const todayStr = new Date().toISOString().split('T')[0];
     const { count: totalPrograms, error: errProgs } = await supabaseAdmin
       .from('scholarship_programs')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'OPEN');
+      .eq('status', 'aktif')
+      .gte('deadline', todayStr);
 
     if (errProgs) throw new Error(`Gagal mengambil data program: ${errProgs.message}`);
 

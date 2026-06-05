@@ -24,30 +24,55 @@ class ProgramService {
   async getAllPrograms() {
     const { data, error } = await supabaseAdmin
       .from('scholarship_programs')
-      .select('*')
+      .select('id, nama, deskripsi, nominal:monthly_amount, deadline, kuota, sisa_kuota, status, created_at, updated_at')
       .order('deadline', { ascending: true });
 
     if (error) throw new Error(`Gagal mengambil data program: ${error.message}`);
-    return data;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return data.map((program: any) => {
+      const deadlineDate = new Date(program.deadline);
+      const isExpired = today > deadlineDate;
+      return {
+        ...program,
+        status: isExpired ? 'ditutup' : program.status,
+      };
+    });
   }
 
   async getProgramById(programId: string) {
     const { data, error } = await supabaseAdmin
       .from('scholarship_programs')
-      .select('*')
+      .select('id, nama, deskripsi, nominal:monthly_amount, deadline, kuota, sisa_kuota, status, created_at, updated_at')
       .eq('id', programId)
       .single();
 
-    if (error) throw new Error(`Program beasiswa tidak ditemukan.`);
-    return data;
+    if (error || !data) throw new Error(`Program beasiswa tidak ditemukan.`);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadlineDate = new Date(data.deadline);
+    const isExpired = today > deadlineDate;
+
+    return {
+      ...data,
+      status: isExpired ? 'ditutup' : data.status,
+    };
   }
 
   async createProgram(payload: CreateProgramPayload) {
     const { data, error } = await supabaseAdmin
       .from('scholarship_programs')
       .insert({
-        ...payload,
-        status: 'DRAFT', // Berdasarkan FSD-2.9.2, status awal DRAFT
+        nama: payload.name,
+        deskripsi: payload.description || '',
+        monthly_amount: payload.nominal,
+        kuota: payload.quota,
+        sisa_kuota: payload.quota,
+        deadline: payload.deadline,
+        status: 'aktif',
       })
       .select()
       .single();
@@ -60,16 +85,25 @@ class ProgramService {
     // Validasi apakah program masih bisa diedit
     const program = await this.getProgramById(programId);
     
-    // Berdasarkan Business Rule, jika bukan DRAFT, field inti (nominal, kuota) tidak dapat diedit
-    if (program.status !== 'DRAFT') {
+    if (program.status === 'aktif') {
       if (payload.nominal || payload.quota) {
         throw new Error("Program aktif tidak dapat diedit field intinya. Tutup program terlebih dahulu.");
       }
     }
 
+    const updateData: any = {};
+    if (payload.name !== undefined) updateData.nama = payload.name;
+    if (payload.description !== undefined) updateData.deskripsi = payload.description;
+    if (payload.nominal !== undefined) updateData.monthly_amount = payload.nominal;
+    if (payload.quota !== undefined) {
+      updateData.kuota = payload.quota;
+      updateData.sisa_kuota = payload.quota; // Reset sisa_kuota to match new quota
+    }
+    if (payload.deadline !== undefined) updateData.deadline = payload.deadline;
+
     const { data, error } = await supabaseAdmin
       .from('scholarship_programs')
-      .update(payload)
+      .update(updateData)
       .eq('id', programId)
       .select()
       .single();

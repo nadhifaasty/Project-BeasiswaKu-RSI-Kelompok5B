@@ -16,5 +16,5 @@ export const createProgramSchema = z.object({
 export const updateProgramSchema = createProgramSchema.partial();
 
 export const updateProgramStatusSchema = z.object({
-  status: z.enum(['OPEN', 'CLOSED', 'DRAFT'], { message: "Status wajib diisi" }),
+  status: z.enum(['aktif', 'ditutup'], { message: "Status wajib diisi" }),
 });

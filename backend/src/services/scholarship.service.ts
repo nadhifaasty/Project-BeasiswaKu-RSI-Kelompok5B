@@ -24,7 +24,7 @@ class ScholarshipService {
         *,
         scholarship_programs (
           nama,
-          nominal,
+          nominal:monthly_amount,
           deadline,
           status
         )
@@ -46,7 +46,7 @@ class ScholarshipService {
         *,
         scholarship_programs (
           nama,
-          nominal,
+          nominal:monthly_amount,
           deadline,
           status
         )
@@ -67,24 +67,29 @@ class ScholarshipService {
 
     // 1. Check if program exists and is active
     const program = await programService.getProgramById(program_id);
-    if (program.status !== 'OPEN') {
+    if (program.status !== 'aktif') {
       throw new Error('Program beasiswa ini sudah ditutup.');
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadline = new Date(program.deadline);
+    if (today > deadline) {
+      throw new Error('Program beasiswa ini sudah ditutup karena melewati batas deadline.');
     }
 
     if (program.sisa_kuota <= 0) {
       throw new Error('Kuota program beasiswa ini sudah penuh.');
     }
 
-    // 2. Check if user already applied to this program
+    // 2. Check if user already applied to ANY program (BR-01 & BR-02: Siswa hanya diperbolehkan mendaftar ke satu jenis program beasiswa)
     const { data: existing } = await supabaseAdmin
       .from('applications')
       .select('id')
-      .eq('user_id', userId)
-      .eq('program_id', program_id)
-      .single();
+      .eq('user_id', userId);
 
-    if (existing) {
-      throw new Error('Kamu sudah mengajukan beasiswa untuk program ini.');
+    if (existing && existing.length > 0) {
+      throw new Error('Kamu sudah mengajukan beasiswa. Siswa hanya diperbolehkan mendaftar ke satu program beasiswa.');
     }
 
     // 3. Check if biodata is complete (progress = 100%)
@@ -96,6 +101,24 @@ class ScholarshipService {
 
     if (!profile || profile.biodata_progress < 100) {
       throw new Error('Lengkapi biodata terlebih dahulu sebelum mengajukan beasiswa.');
+    }
+
+    // 4. Check if student educational level matches program level
+    const { data: akademik } = await supabaseAdmin
+      .from('biodata_akademik')
+      .select('jenjang')
+      .eq('user_id', userId)
+      .single();
+
+    if (!akademik) {
+      throw new Error('Lengkapi biodata akademik terlebih dahulu sebelum mengajukan beasiswa.');
+    }
+
+    const studentIsCollege = akademik.jenjang?.toLowerCase().includes('perguruan') || akademik.jenjang?.toUpperCase() === 'PERGURUAN_TINGGI';
+    const programIsCollege = program.nama?.toLowerCase().includes('perguruan') || program.nama?.toLowerCase().includes('mahasiswa') || program.nama?.toLowerCase().includes('tinggi');
+
+    if (studentIsCollege !== programIsCollege) {
+      throw new Error(`Jenjang pendidikan Anda (${akademik.jenjang}) tidak sesuai dengan program beasiswa (${program.nama}).`);
     }
 
     // 4. Generate reference number
@@ -142,7 +165,7 @@ class ScholarshipService {
         ),
         scholarship_programs (
           nama,
-          nominal
+          nominal:monthly_amount
         )
       `)
       .order('created_at', { ascending: false });

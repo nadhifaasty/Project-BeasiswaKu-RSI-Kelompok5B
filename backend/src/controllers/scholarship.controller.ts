@@ -3,7 +3,10 @@ import { scholarshipService } from '../services/scholarship.service';
 import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
 
+import { supabaseAdmin } from '../config/supabase';
+
 // ============ APPLICATIONS (User) ============
+
 
 export const getUserApplications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -37,13 +40,22 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
       return;
     }
 
-    if (Number(ipk) < 0 || Number(ipk) > 4) {
-      sendError(res, 'IPK harus antara 0 dan 4.', 400);
+    const { data: program } = await supabaseAdmin
+      .from('scholarship_programs')
+      .select('nama')
+      .eq('id', program_id)
+      .single();
+
+    const isCollege = program?.nama?.toLowerCase().includes('perguruan') || program?.nama?.toLowerCase().includes('mahasiswa') || program?.nama?.toLowerCase().includes('tinggi');
+    const maxVal = isCollege ? 4 : 100;
+
+    if (Number(ipk) < 0 || Number(ipk) > maxVal) {
+      sendError(res, `IPK/Nilai harus antara 0 dan ${maxVal}.`, 400);
       return;
     }
 
-    if (esai_motivasi.length < 100) {
-      sendError(res, 'Esai motivasi minimal 100 karakter.', 400);
+    if (esai_motivasi.length < 1000) {
+      sendError(res, 'Esai motivasi minimal 1000 karakter.', 400);
       return;
     }
 

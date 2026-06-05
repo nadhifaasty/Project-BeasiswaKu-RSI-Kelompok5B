@@ -7,10 +7,12 @@ import {
   type ScholarshipProgram,
   type Application,
 } from '../services/scholarship'
+import { getBiodataAkademik, type BiodataAkademik } from '../services/biodata'
 
 function PengajuanPage() {
   const [programs, setPrograms] = useState<ScholarshipProgram[]>([])
   const [applications, setApplications] = useState<Application[]>([])
+  const [akademik, setAkademik] = useState<BiodataAkademik | null>(null)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [selectedProgram, setSelectedProgram] = useState<ScholarshipProgram | null>(null)
@@ -22,6 +24,18 @@ function PengajuanPage() {
   const [esai, setEsai] = useState('')
   const [prestasi, setPrestasi] = useState('')
 
+  const studentIsCollege = akademik?.jenjang?.toLowerCase().includes('perguruan') || akademik?.jenjang?.toUpperCase() === 'PERGURUAN_TINGGI'
+
+  function isProgramMatching(progName: string): boolean {
+    if (!akademik) return true
+    const programIsCollege = progName?.toLowerCase().includes('perguruan') || progName?.toLowerCase().includes('mahasiswa') || progName?.toLowerCase().includes('tinggi')
+    return studentIsCollege === programIsCollege
+  }
+
+  const isCollege = selectedProgram?.nama?.toLowerCase().includes('perguruan') || selectedProgram?.nama?.toLowerCase().includes('mahasiswa') || selectedProgram?.nama?.toLowerCase().includes('tinggi')
+  const maxVal = isCollege ? 4 : 100
+  const placeholderVal = isCollege ? '3.75' : '85.50'
+
   useEffect(() => {
     loadData()
   }, [])
@@ -29,9 +43,14 @@ function PengajuanPage() {
   async function loadData() {
     try {
       setLoading(true)
-      const [progs, apps] = await Promise.all([getPrograms(), getUserApplications()])
+      const [progs, apps, akad] = await Promise.all([
+        getPrograms(),
+        getUserApplications(),
+        getBiodataAkademik().catch(() => null)
+      ])
       setPrograms(progs)
       setApplications(apps)
+      setAkademik(akad)
     } catch {
       setMessage({ type: 'error', text: 'Gagal memuat data.' })
     } finally {
@@ -43,7 +62,7 @@ function PengajuanPage() {
     setSelectedProgram(program)
     setShowForm(true)
     setMessage(null)
-    setIpk('')
+    setIpk(akademik?.ipk_nilai ? String(akademik.ipk_nilai) : '')
     setEsai('')
     setPrestasi('')
   }
@@ -131,7 +150,13 @@ function PengajuanPage() {
                     {app.scholarship_programs?.nama || 'Program Beasiswa'}
                   </p>
                   <p className="text-sm text-gray-500">
-                    No. Ref: {app.nomor_referensi} &bull; IPK: {app.ipk}
+                    No. Ref: {app.nomor_referensi} &bull; {
+                      app.scholarship_programs?.nama?.toLowerCase().includes('perguruan') ||
+                      app.scholarship_programs?.nama?.toLowerCase().includes('mahasiswa') ||
+                      app.scholarship_programs?.nama?.toLowerCase().includes('tinggi')
+                        ? 'IPK'
+                        : 'Nilai rata-rata'
+                    }: {app.ipk}
                   </p>
                   {app.catatan_admin && (
                     <p className="text-sm text-gray-600 mt-1 italic">
@@ -171,10 +196,10 @@ function PengajuanPage() {
                 type="number"
                 step="0.01"
                 min="0"
-                max="4"
+                max={maxVal}
                 value={ipk}
                 onChange={(e) => setIpk(e.target.value)}
-                placeholder="3.75"
+                placeholder={placeholderVal}
                 required
               />
 
@@ -185,13 +210,13 @@ function PengajuanPage() {
                 <textarea
                   value={esai}
                   onChange={(e) => setEsai(e.target.value)}
-                  placeholder="Tuliskan motivasi kamu mengajukan beasiswa ini (min. 100 karakter)..."
+                  placeholder="Tuliskan motivasi kamu mengajukan beasiswa ini (min. 1000 karakter)..."
                   rows={5}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent resize-none"
                   required
-                  minLength={100}
+                  minLength={1000}
                 />
-                <p className="text-xs text-gray-400 mt-1">{esai.length}/100 karakter minimum</p>
+                <p className="text-xs text-gray-400 mt-1">{esai.length}/1000 karakter minimum</p>
               </div>
 
               <div>
@@ -254,7 +279,15 @@ function PengajuanPage() {
                 <Button variant="ghost" disabled className="w-full">
                   ✓ Sudah Diajukan
                 </Button>
-              ) : program.status === 'aktif' && program.sisa_kuota > 0 ? (
+              ) : !isProgramMatching(program.nama) ? (
+                <Button variant="ghost" disabled className="w-full">
+                  Tidak Sesuai Jenjang
+                </Button>
+              ) : applications.length > 0 ? (
+                <Button variant="ghost" disabled className="w-full">
+                  Tidak Tersedia (Sudah Mengajukan Beasiswa)
+                </Button>
+              ) : program.status === 'aktif' && program.sisa_kuota > 0 && new Date(program.deadline) >= new Date(new Date().setHours(0, 0, 0, 0)) ? (
                 <Button variant="secondary" onClick={() => openForm(program)} className="w-full">
                   Ajukan Sekarang
                 </Button>
