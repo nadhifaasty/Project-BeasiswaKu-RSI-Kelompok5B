@@ -16,6 +16,7 @@ import DokumenPage from './pages/DokumenPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPengajuanPage from './pages/AdminPengajuanPage'
+import AdminKelolaProgramPage from './pages/admin/AdminKelolaProgramPage'
 import SelectionPage from './pages/admin/SelectionPage'
 import AdminLaporanDanaPage from './pages/admin/AdminLaporanDanaPage'
 import AuditLogPage from './pages/admin/AuditLogPage'
@@ -52,6 +53,7 @@ function App() {
       <Route element={<ProtectedRoute allowedRoles={['admin', 'super_admin']} />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          <Route path="/admin/program" element={<AdminKelolaProgramPage />} />
           <Route path="/admin/pengajuan" element={<AdminPengajuanPage />} />
           <Route path="/admin/seleksi" element={<SelectionPage />} />
           <Route path="/admin/laporan-dana" element={<AdminLaporanDanaPage />} />

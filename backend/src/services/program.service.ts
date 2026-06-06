@@ -45,7 +45,7 @@ class ProgramService {
   async getProgramById(programId: string) {
     const { data, error } = await supabaseAdmin
       .from('scholarship_programs')
-      .select('id, nama, deskripsi, nominal:monthly_amount, deadline, kuota, sisa_kuota, status, created_at, updated_at')
+      .select('id, nama, deskripsi, target_level, nominal:monthly_amount, deadline, kuota, sisa_kuota, status, created_at, updated_at, created_by')
       .eq('id', programId)
       .single();
 
@@ -58,26 +58,45 @@ class ProgramService {
 
     return {
       ...data,
-      status: isExpired ? 'ditutup' : data.status,
+      status: isExpired && data.status === 'OPEN' ? 'CLOSED' : data.status,
     };
   }
 
-  async createProgram(payload: CreateProgramPayload) {
+  async createProgram(adminId: string, payload: CreateProgramPayload) {
+    // Validasi
+    if (payload.nominal <= 0) throw new Error("Nominal beasiswa harus lebih dari 0.");
+    if (payload.quota <= 0) throw new Error("Kuota penerima harus lebih dari 0.");
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadlineDate = new Date(payload.deadline);
+    if (deadlineDate <= today) throw new Error("Deadline harus setelah hari ini.");
+
     const { data, error } = await supabaseAdmin
       .from('scholarship_programs')
       .insert({
         nama: payload.name,
+        target_level: payload.target_level,
         deskripsi: payload.description || '',
         monthly_amount: payload.nominal,
         kuota: payload.quota,
         sisa_kuota: payload.quota,
         deadline: payload.deadline,
-        status: 'aktif',
+        created_by: adminId,
+        status: 'DRAFT', // Default status
       })
       .select()
       .single();
 
     if (error) throw new Error(`Gagal membuat program: ${error.message}`);
+
+    // Catat ke audit_logs (AC-08)
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: adminId,
+      aksi: `CREATE_PROGRAM: Membuka program beasiswa baru: ${payload.name}`,
+      level: 'INFO'
+    });
+
     return data;
   }
 

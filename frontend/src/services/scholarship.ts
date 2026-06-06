@@ -10,7 +10,7 @@ export interface ScholarshipProgram {
   deadline: string
   kuota: number
   sisa_kuota: number
-  status: 'aktif' | 'ditutup'
+  status: 'aktif' | 'ditutup' | 'OPEN' | 'CLOSED' | 'DRAFT'
   created_at: string
 }
 
@@ -42,6 +42,16 @@ export interface CreateApplicationPayload {
   prestasi_non_akademik?: string
 }
 
+export interface CreateProgramPayload {
+  name: string
+  target_level: 'SMA' | 'PERGURUAN_TINGGI'
+  nominal: number
+  quota: number
+  deadline: string
+  description?: string
+  requirements?: any
+}
+
 interface ApiResponse<T> {
   success: boolean
   message: string
@@ -71,9 +81,17 @@ export async function getApplicationById(id: string): Promise<Application> {
 }
 
 export async function createApplication(payload: CreateApplicationPayload): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>('/scholarship/applications', {
+  const res = await fetchApi<ApiResponse<Application>>('/applications', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
-  return res.data
+  return res.data!
+}
+
+export async function createProgramAdmin(payload: CreateProgramPayload): Promise<ScholarshipProgram> {
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>('/programs', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return res.data!
 }

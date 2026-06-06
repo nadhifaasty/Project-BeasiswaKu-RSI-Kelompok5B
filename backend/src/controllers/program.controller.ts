@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthenticatedRequest } from '../types';
 import { programService } from '../services/program.service';
 import { sendSuccess, sendError } from '../utils';
 import { createProgramSchema, updateProgramSchema, updateProgramStatusSchema } from '../utils/validators';
@@ -23,12 +24,13 @@ export const getProgramById = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const createProgram = async (req: Request, res: Response): Promise<void> => {
+export const createProgram = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const adminId = req.user!.userId;
     // Validasi Zod
     const parsedData = createProgramSchema.parse(req.body);
 
-    const data = await programService.createProgram(parsedData);
+    const data = await programService.createProgram(adminId, parsedData);
     sendSuccess(res, data, 'Program beasiswa berhasil dibuat!', 201);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
