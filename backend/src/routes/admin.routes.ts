@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getAuditLogs, getEvaluations } from '../controllers/admin.controller';
 import { runSelection, getSelectionResults, finalizeSelection, rollbackSelection } from '../controllers/selection.controller';
-import { getSuperAdminMetrics } from '../controllers/dashboard.controller';
+import { getSuperAdminMetrics, getMonitoring } from '../controllers/dashboard.controller';
 import { verifyJWT } from '../middlewares/auth.middleware';
 import { checkRole } from '../middlewares/rbac.middleware';
 const router = Router();
@@ -29,6 +29,9 @@ router.post('/selections/:programId/finalize', verifyJWT, checkRole(['admin', 's
 router.post('/selections/:programId/rollback', verifyJWT, checkRole(['admin', 'super_admin']), rollbackSelection);
 
 // ============ SUPER ADMIN DASHBOARD KPI METRICS ============
+// GET /api/admin/monitoring — SuperAdmin ONLY
+router.get('/monitoring', verifyJWT, checkRole(['super_admin']), getMonitoring);
+
 // GET /api/super-admin/dashboard (also handles /api/admin/dashboard)
 router.get('/dashboard', verifyJWT, checkRole(['super_admin', 'admin']), getSuperAdminMetrics);
 

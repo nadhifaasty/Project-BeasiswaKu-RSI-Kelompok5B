@@ -8,6 +8,8 @@ import documentRoutes from './document.routes';
 import programRoutes from './program.routes';
 import adminRoutes from './admin.routes';
 import fundReportRoutes from './fund-report.routes';
+import disbursementRoutes from './disbursement.routes';
+import systemRoutes from './system.routes';
 
 const router = Router();
 
@@ -32,6 +34,13 @@ router.use('/documents', documentRoutes);
 
 // Fund report routes
 router.use('/fund-reports', fundReportRoutes);
+
+// Disbursement routes
+router.use('/disbursements', disbursementRoutes);
+
+// System routes
+router.use('/system', systemRoutes);
+router.use('/', systemRoutes);
 
 // Admin / Super Admin routes
 // Sesuai konvensi user menggunakan /super-admin dan TSD menggunakan /api/v1/admin

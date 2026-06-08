@@ -94,6 +94,97 @@ class DashboardService {
       }))
     };
   }
+
+  async getMonitoringMetrics(tahunAjaran?: string, semester?: string) {
+    const { count: totalPendaftar, error: err1 } = await supabaseAdmin
+      .from('applications')
+      .select('*', { count: 'exact', head: true });
+    if (err1) throw new Error(`Gagal mengambil data pendaftar: ${err1.message}`);
+
+    const { count: totalPenerima, error: err2 } = await supabaseAdmin
+      .from('applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'DITERIMA');
+    if (err2) throw new Error(`Gagal mengambil data penerima: ${err2.message}`);
+
+    const { data: acceptedWithProgram } = await supabaseAdmin
+      .from('applications')
+      .select(`
+        id,
+        scholarship_programs (
+          monthly_amount
+        )
+      `)
+      .eq('status', 'DITERIMA');
+
+    let akumulasiDanaCair = 0;
+    acceptedWithProgram?.forEach((app: any) => {
+      if (app.scholarship_programs) {
+        const nominalStr = String(app.scholarship_programs.monthly_amount || '0');
+        const nominalVal = Number(nominalStr.replace(/\D/g, ''));
+        akumulasiDanaCair += nominalVal;
+      }
+    });
+
+    const totalPendaftarVal = totalPendaftar || 0;
+    const totalPenerimaVal = totalPenerima || 0;
+    const successRate = totalPendaftarVal > 0 ? (totalPenerimaVal / totalPendaftarVal) * 100 : 0;
+
+    const { data: topInstitusi } = await supabaseAdmin
+      .from('applications')
+      .select(`
+        profiles (
+          asal_institusi
+        )
+      `)
+      .not('status', 'eq', 'DRAFT');
+
+    const institusiCount: Record<string, number> = {};
+    (topInstitusi || []).forEach((app: any) => {
+      const institusi = app.profiles?.asal_institusi;
+      if (institusi) {
+        institusiCount[institusi] = (institusiCount[institusi] || 0) + 1;
+      }
+    });
+
+    const top5 = Object.entries(institusiCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([nama, jumlah]) => ({ nama, jumlah }));
+
+    const { data: appDates } = await supabaseAdmin
+      .from('applications')
+      .select('created_at');
+
+    const semesterTrend: Record<string, number> = {};
+    appDates?.forEach((app) => {
+      if (app.created_at) {
+        const d = new Date(app.created_at);
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const sem = month < 7 ? `${year}/GANJIL` : `${year}/GENAP`;
+        semesterTrend[sem] = (semesterTrend[sem] || 0) + 1;
+      }
+    });
+
+    return {
+      kpi: {
+        total_pendaftar: totalPendaftarVal,
+        total_penerima: totalPenerimaVal,
+        akumulasi_dana_cair: akumulasiDanaCair,
+        success_rate: Number(successRate.toFixed(1)),
+      },
+      top_institusi: top5,
+      trend_semesteran: Object.entries(semesterTrend).map(([semester, total]) => ({
+        semester,
+        total,
+      })),
+      map_data: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+    };
+  }
 }
 
 export const dashboardService = new DashboardService();

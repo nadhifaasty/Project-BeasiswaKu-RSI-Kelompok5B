@@ -32,6 +32,8 @@ const limiter = rateLimit({
 });
 
 app.use('/api', limiter);
+app.use('/api/v1', limiter);
+app.use('/api/v1', routes);
 app.use('/api', routes);
 
 export default app;
