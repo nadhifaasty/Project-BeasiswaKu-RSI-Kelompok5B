@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import Card from '../../components/Card'
-import { getPrograms, type ScholarshipProgram } from '../../services/scholarship'
+import { getPrograms, updateProgramStatusAdmin, type ScholarshipProgram } from '../../services/scholarship'
 import { ProgramFormModal } from '../../components/admin/ProgramFormModal'
 
 export default function AdminKelolaProgramPage() {
@@ -10,6 +10,7 @@ export default function AdminKelolaProgramPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedProgram, setSelectedProgram] = useState<ScholarshipProgram | null>(null)
 
   const loadPrograms = async () => {
     try {
@@ -27,11 +28,36 @@ export default function AdminKelolaProgramPage() {
     loadPrograms()
   }, [])
 
-  const handleSuccess = (programName: string) => {
+  const handleSuccess = (programName: string, isEdit: boolean) => {
     setIsModalOpen(false)
-    setSuccessMsg(`Program beasiswa "${programName}" berhasil dibuat.`)
+    setSelectedProgram(null)
+    setSuccessMsg(`Program beasiswa "${programName}" berhasil ${isEdit ? 'diperbarui' : 'dibuat'}.`)
     loadPrograms()
     setTimeout(() => setSuccessMsg(null), 5000)
+  }
+
+  const handleEdit = (prog: ScholarshipProgram) => {
+    setSelectedProgram(prog)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedProgram(null)
+  }
+
+  const handleToggleStatus = async (prog: ScholarshipProgram) => {
+    if (!window.confirm(`Apakah Anda yakin ingin ${prog.status === 'aktif' || prog.status === 'OPEN' ? 'menonaktifkan' : 'mengaktifkan'} program ini?`)) return
+    
+    try {
+      const newStatus = (prog.status === 'aktif' || prog.status === 'OPEN') ? 'ditutup' : 'aktif'
+      await updateProgramStatusAdmin(prog.id, newStatus)
+      setSuccessMsg(`Status program berhasil diubah menjadi ${newStatus}.`)
+      loadPrograms()
+      setTimeout(() => setSuccessMsg(null), 5000)
+    } catch (err: any) {
+      setError(err.message || 'Gagal mengubah status program.')
+    }
   }
 
   const formatRupiah = (angka: number) => {
@@ -50,7 +76,10 @@ export default function AdminKelolaProgramPage() {
           <p className="text-slate-500 mt-1">Buat, lihat, dan kelola program beasiswa yang tersedia.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setSelectedProgram(null)
+            setIsModalOpen(true)
+          }}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,8 +162,14 @@ export default function AdminKelolaProgramPage() {
                         {prog.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
+                    <td className="px-6 py-4 whitespace-nowrap text-right space-x-3">
+                      <button 
+                        onClick={() => handleToggleStatus(prog)} 
+                        className={`${prog.status === 'aktif' || prog.status === 'OPEN' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'} text-sm font-medium`}
+                      >
+                        {prog.status === 'aktif' || prog.status === 'OPEN' ? 'Tutup' : 'Aktifkan'}
+                      </button>
+                      <button onClick={() => handleEdit(prog)} className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
                     </td>
                   </tr>
                 ))}
@@ -146,7 +181,8 @@ export default function AdminKelolaProgramPage() {
 
       {isModalOpen && (
         <ProgramFormModal
-          onClose={() => setIsModalOpen(false)}
+          initialData={selectedProgram}
+          onClose={handleCloseModal}
           onSuccess={handleSuccess}
         />
       )}

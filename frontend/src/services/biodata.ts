@@ -67,6 +67,11 @@ export async function getAllBiodata(): Promise<AllBiodata> {
   return res.data
 }
 
+export async function getBiodataStatus(): Promise<{ completion_pct: number }> {
+  const res = await fetchApi<ApiResponse<{ completion_pct: number }>>('/biodata/status')
+  return res.data
+}
+
 export async function getBiodataPribadi(): Promise<BiodataPribadi | null> {
   const res = await fetchApi<ApiResponse<BiodataPribadi | null>>('/biodata/pribadi')
   return res.data

@@ -1,24 +1,35 @@
-import { useState } from 'react'
-import { createProgramAdmin, type CreateProgramPayload } from '../../services/scholarship'
+import { useState, useEffect } from 'react'
+import { createProgramAdmin, updateProgramAdmin, type CreateProgramPayload, type ScholarshipProgram } from '../../services/scholarship'
 
 interface ProgramFormModalProps {
+  initialData?: ScholarshipProgram | null
   onClose: () => void
-  onSuccess: (programName: string) => void
+  onSuccess: (programName: string, isEdit: boolean) => void
 }
 
-export function ProgramFormModal({ onClose, onSuccess }: ProgramFormModalProps) {
+export function ProgramFormModal({ initialData, onClose, onSuccess }: ProgramFormModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  const isEdit = !!initialData
+
   const [formData, setFormData] = useState<CreateProgramPayload>({
-    name: '',
-    target_level: 'SMA',
-    nominal: 0,
-    quota: 0,
-    deadline: '',
-    description: '',
+    name: initialData?.nama || '',
+    target_level: (initialData?.nama.includes('SMA') ? 'SMA' : 'PERGURUAN_TINGGI') as any, // Simple inference since backend target_level isn't fully exposed
+    nominal: initialData ? Number(initialData.nominal) : 0,
+    quota: initialData?.kuota || 0,
+    deadline: initialData ? new Date(initialData.deadline).toISOString().split('T')[0] : '',
+    description: initialData?.deskripsi || '',
     requirements: ''
   })
+
+  // Better inference for target_level if possible
+  useEffect(() => {
+    if (initialData) {
+      const level = initialData.nama.toLowerCase().includes('sma') ? 'SMA' : 'PERGURUAN_TINGGI'
+      setFormData(prev => ({ ...prev, target_level: level }))
+    }
+  }, [initialData])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -45,10 +56,18 @@ export function ProgramFormModal({ onClose, onSuccess }: ProgramFormModalProps) 
 
     try {
       setLoading(true)
-      await createProgramAdmin(formData)
-      onSuccess(formData.name)
+      if (isEdit && initialData) {
+        // Prepare payload, omitting name/quota/target_level if we don't want to change them (but backend update allows partial)
+        const payload: Partial<CreateProgramPayload> = { ...formData }
+        // We might want to selectively send fields, but sending all is fine as long as validation passes
+        await updateProgramAdmin(initialData.id, payload)
+        onSuccess(formData.name, true)
+      } else {
+        await createProgramAdmin(formData)
+        onSuccess(formData.name, false)
+      }
     } catch (err: any) {
-      setError(err.message || 'Data tidak valid. Gagal membuat program.')
+      setError(err.message || 'Data tidak valid. Gagal menyimpan program.')
     } finally {
       setLoading(false)
     }
@@ -58,7 +77,7 @@ export function ProgramFormModal({ onClose, onSuccess }: ProgramFormModalProps) 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-semibold text-gray-800">Tambah Program Beasiswa Baru</h2>
+          <h2 className="text-xl font-semibold text-gray-800">{isEdit ? 'Edit Program Beasiswa' : 'Tambah Program Beasiswa Baru'}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

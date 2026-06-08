@@ -27,6 +27,16 @@ export const getPribadi = async (req: AuthenticatedRequest, res: Response): Prom
   }
 };
 
+export const getBiodataStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const data = await biodataService.getBiodataStatus(userId);
+    sendSuccess(res, data, 'Status biodata berhasil diambil.');
+  } catch (error: any) {
+    sendError(res, error.message, 500);
+  }
+};
+
 export const upsertPribadi = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;

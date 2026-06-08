@@ -7,6 +7,7 @@ import {
   createApplication,
   getAllApplications,
   updateApplicationStatus,
+  submitApplication,
 } from '../controllers/scholarship.controller';
 
 const router = Router();
@@ -20,6 +21,9 @@ router.get('/applications/:id', verifyJWT, getApplicationById);
 
 // POST /api/scholarship/applications
 router.post('/applications', verifyJWT, createApplication);
+
+// POST /api/scholarship/applications/:id/submit
+router.post('/applications/:id/submit', verifyJWT, submitApplication);
 
 // ============ ADMIN: Manage Applications ============
 // GET /api/scholarship/admin/applications?status=PENDING

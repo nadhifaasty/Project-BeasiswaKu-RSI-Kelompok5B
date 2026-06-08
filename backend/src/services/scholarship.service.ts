@@ -9,6 +9,8 @@ export interface CreateApplicationPayload {
   ipk: number;
   esai_motivasi: string;
   prestasi_non_akademik?: string;
+  data_akademik?: string;
+  status?: 'DRAFT' | 'PENDING';
 }
 
 // ============ SERVICE ============
@@ -63,7 +65,7 @@ class ScholarshipService {
    * Create a new scholarship application
    */
   async createApplication(userId: string, payload: CreateApplicationPayload) {
-    const { program_id, ipk, esai_motivasi, prestasi_non_akademik } = payload;
+    const { program_id, ipk, esai_motivasi, prestasi_non_akademik, data_akademik, status = 'PENDING' } = payload;
 
     // 1. Check if program exists and is active
     const program = await programService.getProgramById(program_id);
@@ -82,14 +84,21 @@ class ScholarshipService {
       throw new Error('Kuota program beasiswa ini sudah penuh.');
     }
 
-    // 2. Check if user already applied to ANY program (BR-01 & BR-02: Siswa hanya diperbolehkan mendaftar ke satu jenis program beasiswa)
+    // 2. Check if user already applied to ANY program (BR-01 & BR-02)
+    // Kecuali jika ada DRAFT yang sudah dibuat
     const { data: existing } = await supabaseAdmin
       .from('applications')
-      .select('id')
+      .select('id, status')
       .eq('user_id', userId);
 
     if (existing && existing.length > 0) {
-      throw new Error('Kamu sudah mengajukan beasiswa. Siswa hanya diperbolehkan mendaftar ke satu program beasiswa.');
+      // Jika statusnya bukan DRAFT, tolak
+      const hasActive = existing.some(app => app.status !== 'DRAFT');
+      if (hasActive) {
+        throw new Error('Kamu sudah mengajukan beasiswa. Siswa hanya diperbolehkan mendaftar ke satu program beasiswa.');
+      }
+      // Jika ada DRAFT tapi program beda, mungkin kita tolak atau biarkan. 
+      // Untuk amannya, kita izinkan 1 DRAFT per user per program, di-handle oleh unique(user_id, program_id)
     }
 
     // 3. Check if biodata is complete (progress = 100%)
@@ -121,8 +130,9 @@ class ScholarshipService {
       throw new Error(`Jenjang pendidikan Anda (${akademik.jenjang}) tidak sesuai dengan program beasiswa (${program.nama}).`);
     }
 
-    // 4. Generate reference number
-    const nomor_referensi = this.generateReferenceNumber();
+    // 4. Generate reference number (Temporary for DRAFT)
+    const isDraft = status === 'DRAFT';
+    const nomor_referensi = isDraft ? `DRF-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}` : this.generateReferenceNumber();
 
     // 5. Insert application
     const { data, error } = await supabaseAdmin
@@ -134,20 +144,80 @@ class ScholarshipService {
         ipk,
         esai_motivasi,
         prestasi_non_akademik: prestasi_non_akademik || null,
-        status: 'PENDING',
+        data_akademik: data_akademik ? JSON.parse(data_akademik) : null,
+        status: status,
       })
       .select()
       .single();
 
     if (error) throw new Error(`Gagal membuat pengajuan: ${error.message}`);
 
-    // 6. Decrease remaining quota
+    // 6. Decrease remaining quota ONLY IF NOT DRAFT
+    if (!isDraft) {
+      await supabaseAdmin
+        .from('scholarship_programs')
+        .update({ sisa_kuota: program.sisa_kuota - 1 })
+        .eq('id', program_id);
+    }
+
+    return data;
+  }
+
+  /**
+   * Submit an existing DRAFT application to PENDING
+   */
+  async submitApplication(applicationId: string, userId: string) {
+    // 1. Get the draft application
+    const { data: app, error: appError } = await supabaseAdmin
+      .from('applications')
+      .select('*')
+      .eq('id', applicationId)
+      .eq('user_id', userId)
+      .single();
+
+    if (appError || !app) throw new Error('Pengajuan tidak ditemukan.');
+    if (app.status !== 'DRAFT') throw new Error('Pengajuan ini sudah dikirim sebelumnya.');
+
+    // 2. Check if program exists and is active
+    const program = await programService.getProgramById(app.program_id);
+    if (program.status !== 'aktif') {
+      throw new Error('Program beasiswa ini sudah ditutup.');
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadline = new Date(program.deadline);
+    if (today > deadline) {
+      throw new Error('Program beasiswa ini sudah ditutup karena melewati batas deadline.');
+    }
+
+    // 3. Check quota again
+    if (program.sisa_kuota <= 0) {
+      throw new Error('Kuota program beasiswa ini telah habis.');
+    }
+
+    // 4. Update status and generate final reference number
+    const nomor_referensi = this.generateReferenceNumber();
+    const { data: updatedApp, error: updateError } = await supabaseAdmin
+      .from('applications')
+      .update({
+        status: 'PENDING',
+        nomor_referensi,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', applicationId)
+      .select()
+      .single();
+
+    if (updateError) throw new Error(`Gagal mengirim pengajuan: ${updateError.message}`);
+
+    // 5. Decrease quota
     await supabaseAdmin
       .from('scholarship_programs')
       .update({ sisa_kuota: program.sisa_kuota - 1 })
-      .eq('id', program_id);
+      .eq('id', app.program_id);
 
-    return data;
+    return updatedApp;
   }
 
   /**

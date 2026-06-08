@@ -62,6 +62,20 @@ class BiodataService {
   }
 
   /**
+   * Get biodata status/progress
+   */
+  async getBiodataStatus(userId: string) {
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('biodata_progress')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw new Error(`Gagal mengambil status biodata: ${error.message}`);
+    return { completion_pct: data.biodata_progress };
+  }
+
+  /**
    * Get biodata pribadi
    */
   async getPribadi(userId: string) {

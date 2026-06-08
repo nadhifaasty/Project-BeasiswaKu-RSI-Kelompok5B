@@ -32,7 +32,7 @@ export const getApplicationById = async (req: AuthenticatedRequest, res: Respons
 export const createApplication = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const { program_id, ipk, esai_motivasi, prestasi_non_akademik } = req.body;
+    const { program_id, ipk, esai_motivasi, prestasi_non_akademik, data_akademik, status } = req.body;
 
     // Validation
     if (!program_id || ipk === undefined || !esai_motivasi) {
@@ -64,6 +64,8 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
       ipk: Number(ipk),
       esai_motivasi,
       prestasi_non_akademik,
+      data_akademik,
+      status,
     });
 
     sendSuccess(res, data, 'Pengajuan beasiswa berhasil dibuat!', 201);
@@ -71,6 +73,27 @@ export const createApplication = async (req: AuthenticatedRequest, res: Response
     const status = error.message.includes('sudah mengajukan') ? 409 :
                    error.message.includes('Lengkapi biodata') ? 400 :
                    error.message.includes('ditutup') || error.message.includes('penuh') ? 400 : 500;
+    sendError(res, error.message, status);
+  }
+};
+
+// ============ APPLICATIONS (Siswa Submit) ============
+
+export const submitApplication = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { id } = req.params;
+    const { confirmation } = req.body;
+
+    if (!confirmation) {
+      sendError(res, 'Anda harus menyetujui pernyataan keabsahan data.', 400);
+      return;
+    }
+
+    const data = await scholarshipService.submitApplication(id, userId);
+    sendSuccess(res, data, 'Pengajuan beasiswa berhasil dikirim!', 200);
+  } catch (error: any) {
+    const status = error.message.includes('habis') ? 400 : 500;
     sendError(res, error.message, status);
   }
 };

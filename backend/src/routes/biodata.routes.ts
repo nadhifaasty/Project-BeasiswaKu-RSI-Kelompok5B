@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { verifyJWT } from '../middlewares/auth.middleware';
 import {
   getAllBiodata,
+  getBiodataStatus,
   getPribadi,
   upsertPribadi,
   getAlamat,
@@ -19,6 +20,9 @@ router.use(verifyJWT);
 
 // GET /api/biodata - Get all biodata sections
 router.get('/', getAllBiodata);
+
+// GET /api/biodata/status - Get biodata progress
+router.get('/status', getBiodataStatus);
 
 // Biodata Pribadi
 router.get('/pribadi', getPribadi);

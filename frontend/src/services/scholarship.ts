@@ -37,6 +37,8 @@ export interface Application {
 
 export interface CreateApplicationPayload {
   program_id: string
+  status?: 'DRAFT' | 'PENDING'
+  data_akademik?: string
   ipk: number
   esai_motivasi: string
   prestasi_non_akademik?: string
@@ -81,9 +83,17 @@ export async function getApplicationById(id: string): Promise<Application> {
 }
 
 export async function createApplication(payload: CreateApplicationPayload): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>('/applications', {
+  const res = await fetchApi<ApiResponse<Application>>('/scholarship/applications', {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+  return res.data!
+}
+
+export async function submitApplication(applicationId: string): Promise<Application> {
+  const res = await fetchApi<ApiResponse<Application>>(`/scholarship/applications/${applicationId}/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ confirmation: true }),
   })
   return res.data!
 }
@@ -92,6 +102,22 @@ export async function createProgramAdmin(payload: CreateProgramPayload): Promise
   const res = await fetchApi<ApiResponse<ScholarshipProgram>>('/programs', {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+  return res.data!
+}
+
+export async function updateProgramAdmin(id: string, payload: Partial<CreateProgramPayload>): Promise<ScholarshipProgram> {
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/programs/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+  return res.data!
+}
+
+export async function updateProgramStatusAdmin(id: string, status: 'aktif' | 'ditutup'): Promise<ScholarshipProgram> {
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/programs/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
   })
   return res.data!
 }

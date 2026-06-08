@@ -45,7 +45,7 @@ class ProgramService {
   async getProgramById(programId: string) {
     const { data, error } = await supabaseAdmin
       .from('scholarship_programs')
-      .select('id, nama, deskripsi, target_level, nominal:monthly_amount, deadline, kuota, sisa_kuota, status, created_at, updated_at, created_by')
+      .select('id, nama, deskripsi, nominal:monthly_amount, deadline, kuota, sisa_kuota, status, created_at, updated_at')
       .eq('id', programId)
       .single();
 
@@ -76,13 +76,11 @@ class ProgramService {
       .from('scholarship_programs')
       .insert({
         nama: payload.name,
-        target_level: payload.target_level,
         deskripsi: payload.description || '',
         monthly_amount: payload.nominal,
         kuota: payload.quota,
         sisa_kuota: payload.quota,
         deadline: payload.deadline,
-        created_by: adminId,
         status: 'DRAFT', // Default status
       })
       .select()
