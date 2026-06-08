@@ -2,13 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, Button, Input } from '../components'
 import { getUserApplications, type Application } from '../services/scholarship'
-
-interface DisbursementDetails {
-  nama_bank: string
-  nomor_rekening: string
-  nama_pemegang: string
-  cabang_bank: string
-}
+import { getMyDisbursement, createDisbursement, updateDisbursement, type DisbursementData } from '../services/disbursement'
 
 function StatusTrackingPage() {
   const [applications, setApplications] = useState<Application[]>([])
@@ -16,8 +10,8 @@ function StatusTrackingPage() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Simulation state for bank account details (Fund Disbursement Step 5)
-  const [disbursementData, setDisbursementData] = useState<DisbursementDetails | null>(null)
+  const [disbursementData, setDisbursementData] = useState<DisbursementData | null>(null)
+  const [disbursementId, setDisbursementId] = useState<string | null>(null)
   const [showBankForm, setShowBankForm] = useState(false)
   const [bankSubmitting, setBankSubmitting] = useState(false)
   const [bankMessage, setBankMessage] = useState<string | null>(null)
@@ -30,21 +24,22 @@ function StatusTrackingPage() {
   const [passbookFile, setPassbookFile] = useState<File | null>(null)
 
   useEffect(() => {
-    loadApplications()
+    loadData()
   }, [])
 
-  async function loadApplications() {
+  async function loadData() {
     try {
       setLoading(true)
       const apps = await getUserApplications()
       setApplications(apps)
       if (apps.length > 0) {
-        setSelectedApp(apps[0]) // default to latest
-        // Check if bank details exist in localStorage (simulation) for this application
-        const savedBank = localStorage.getItem(`bank_${apps[0].id}`)
-        if (savedBank) {
-          setDisbursementData(JSON.parse(savedBank))
-        }
+        setSelectedApp(apps[0])
+      }
+      // Load disbursement data from API
+      const disburse = await getMyDisbursement()
+      if (disburse) {
+        setDisbursementData(disburse)
+        setDisbursementId(disburse.disbursement_id)
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Gagal memuat data pelacakan status.')
@@ -53,31 +48,45 @@ function StatusTrackingPage() {
     }
   }
 
-  const handleBankSubmit = (e: React.FormEvent) => {
+  const handleBankSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedApp) return
 
     setBankSubmitting(true)
     setBankMessage(null)
 
-    if (passbookFile) {
-      console.log('Mengunggah berkas tabungan:', passbookFile.name)
-    }
-
-    // Simulate database write with 1s latency
-    setTimeout(() => {
-      const details: DisbursementDetails = {
-        nama_bank: bankName,
-        nomor_rekening: accountNumber,
-        nama_pemegang: accountHolder,
+    try {
+      const payload = {
+        bank_name: bankName,
+        account_no: accountNumber,
+        account_holder: accountHolder,
         cabang_bank: branch,
+        receipt_book_file: passbookFile ? passbookFile.name : undefined,
       }
-      localStorage.setItem(`bank_${selectedApp.id}`, JSON.stringify(details))
-      setDisbursementData(details)
-      setBankSubmitting(false)
+
+      if (disbursementId) {
+        const result = await updateDisbursement(disbursementId, payload)
+        setDisbursementData((prev) => prev ? { ...prev, ...result } : null)
+        setBankMessage('Data rekening berhasil diperbarui.')
+      } else {
+        const result = await createDisbursement(payload)
+        setDisbursementData({
+          disbursement_id: result.disbursement_id,
+          bank_name: result.bank_name,
+          account_no_masked: result.account_no_masked,
+          account_holder: accountHolder,
+          cabang_bank: branch,
+          is_verified: result.is_verified,
+        })
+        setDisbursementId(result.disbursement_id)
+        setBankMessage('Data rekening berhasil disimpan dan menunggu verifikasi admin.')
+      }
       setShowBankForm(false)
-      setBankMessage('Data rekening bank berhasil disimpan dan diverifikasi!')
-    }, 1200)
+    } catch (err: any) {
+      setBankMessage(err.message || 'Gagal menyimpan data rekening.')
+    } finally {
+      setBankSubmitting(false)
+    }
   }
 
   function getStatusStyle(status: Application['status']) {
@@ -201,12 +210,22 @@ function StatusTrackingPage() {
             <span className="text-sm text-gray-500 font-medium">Pilih Pengajuan:</span>
             <select
               value={app.id}
-              onChange={(e) => {
+              onChange={async (e) => {
                 const selected = applications.find((a) => a.id === e.target.value) || null
                 setSelectedApp(selected)
-                if (selected) {
-                  const savedBank = localStorage.getItem(`bank_${selected.id}`)
-                  setDisbursementData(savedBank ? JSON.parse(savedBank) : null)
+                // Disbursement data is per-user, not per-application; reload it
+                try {
+                  const disburse = await getMyDisbursement()
+                  if (disburse) {
+                    setDisbursementData(disburse)
+                    setDisbursementId(disburse.disbursement_id)
+                  } else {
+                    setDisbursementData(null)
+                    setDisbursementId(null)
+                  }
+                } catch {
+                  setDisbursementData(null)
+                  setDisbursementId(null)
                 }
               }}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-primary font-medium focus:ring-2 focus:ring-accent bg-white"
@@ -229,7 +248,7 @@ function StatusTrackingPage() {
 
       {bankMessage && (
         <div className="bg-green-50 text-green-700 border border-green-200 rounded-xl p-4 text-sm font-semibold">
-          🎉 {bankMessage}
+          {bankMessage}
         </div>
       )}
 
@@ -368,7 +387,7 @@ function StatusTrackingPage() {
                     <p className="text-sm text-gray-600 mt-1">
                       {disbursementData ? (
                         <span className="text-green-700 font-medium">
-                          Data Rekening: {disbursementData.nama_bank} - {disbursementData.nomor_rekening} ({disbursementData.nama_pemegang})
+                          Data Rekening: {disbursementData.bank_name} - {disbursementData.account_no_masked} ({disbursementData.account_holder})
                         </span>
                       ) : (
                         'Harap melengkapi nomor rekening bank Anda agar pencairan dana beasiswa dapat diproses.'
@@ -441,6 +460,17 @@ function StatusTrackingPage() {
                 className="w-full justify-center bg-green-600 hover:bg-green-700 text-white shadow animate-pulse"
               >
                 Isi Data Rekening Bank
+              </Button>
+            )}
+
+            {/* If ACCEPTED and bank data exists, show edit button */}
+            {isAccepted && disbursementData && (
+              <Button
+                variant="primary"
+                onClick={() => setShowFormBankToggle(true)}
+                className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white shadow"
+              >
+                Edit Data Rekening
               </Button>
             )}
 
@@ -572,11 +602,11 @@ function StatusTrackingPage() {
 
   function setShowFormBankToggle(val: boolean) {
     if (val) {
-      // pre-fill holder name from user info
-      setAccountHolder('')
-      setBankName('')
+      // Pre-fill from existing disbursement data if editing
+      setBankName(disbursementData?.bank_name || '')
       setAccountNumber('')
-      setBranch('')
+      setAccountHolder(disbursementData?.account_holder || '')
+      setBranch(disbursementData?.cabang_bank || '')
       setPassbookFile(null)
     }
     setShowBankForm(val)

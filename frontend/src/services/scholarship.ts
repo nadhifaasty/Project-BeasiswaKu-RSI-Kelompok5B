@@ -63,12 +63,12 @@ interface ApiResponse<T> {
 // ============ API CALLS ============
 
 export async function getPrograms(): Promise<ScholarshipProgram[]> {
-  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/scholarship/programs')
+  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/programs')
   return res.data
 }
 
 export async function getProgramById(id: string): Promise<ScholarshipProgram> {
-  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/scholarship/programs/${id}`)
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/programs/${id}`)
   return res.data
 }
 
