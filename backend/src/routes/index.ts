@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { healthCheck } from '../controllers';
 import { supabaseAdmin } from '../config/supabase';
 import authRoutes from './auth.routes';
+import userRoutes from './user.routes';
 import biodataRoutes from './biodata.routes';
 import scholarshipRoutes from './scholarship.routes';
 import documentRoutes from './document.routes';
@@ -16,6 +17,10 @@ router.get('/health', healthCheck);
 
 // Auth routes
 router.use('/auth', authRoutes);
+
+// User management routes (Modul 2)
+router.use('/users', userRoutes);
+router.use('/v1/users', userRoutes);
 
 // Biodata routes
 router.use('/biodata', biodataRoutes);

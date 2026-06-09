@@ -148,7 +148,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
 /**
  * POST /auth/forgot-password
- * Simulate sending password reset email
+ * Send password reset email
  */
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -159,8 +159,10 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    await authService.forgotPassword(email);
+
     sendSuccess(res, null, 'Link pemulihan kata sandi berhasil dikirim ke email Anda.');
   } catch (error: any) {
-    sendError(res, error.message, 500);
+    sendError(res, error.message, 400);
   }
 };

@@ -19,6 +19,7 @@ import AdminPengajuanPage from './pages/AdminPengajuanPage'
 import SelectionPage from './pages/admin/SelectionPage'
 import AdminLaporanDanaPage from './pages/admin/AdminLaporanDanaPage'
 import AuditLogPage from './pages/admin/AuditLogPage'
+import UserManagementPage from './pages/admin/UserManagementPage'
 import EvaluationsPage from './pages/admin/EvaluationsPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="/admin/evaluasi" element={<EvaluationsPage />} />
           <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
             <Route path="/admin/audit-log" element={<AuditLogPage />} />
+            <Route path="/admin/users" element={<UserManagementPage />} />
           </Route>
         </Route>
       </Route>

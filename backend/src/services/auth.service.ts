@@ -26,11 +26,11 @@ class AuthService {
   async register(payload: RegisterPayload): Promise<{ userId: string; email: string }> {
     const { nama_lengkap, nim_nisn, nomor_hp, email, password } = payload;
 
-    // 1. Check duplicate email in profiles
+    // 1. Check duplicate email in profiles (case-insensitive)
     const { data: existingEmail } = await supabaseAdmin
       .from('profiles')
       .select('id')
-      .eq('email', email)
+      .ilike('email', email.trim())
       .single();
 
     if (existingEmail) {
@@ -97,7 +97,27 @@ class AuthService {
 
     if (sendError) {
       console.error('Warning: Failed to send verification email:', sendError.message);
-      // Non-fatal: user is created, they can request resend via UI
+
+      // Fallback: Generate verification link programmatically so developer/tester can see it in logs
+      try {
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'signup',
+          email,
+          password,
+          options: {
+            redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifikasi-email`,
+          }
+        });
+
+        if (!linkError && linkData?.properties?.action_link) {
+          console.log('\n================================================================');
+          console.log(`[DEVELOPMENT FALLBACK] Link Verifikasi Registrasi (${email}):`);
+          console.log(linkData.properties.action_link);
+          console.log('================================================================\n');
+        }
+      } catch (fallbackErr) {
+        console.error('[Register] Gagal membuat link fallback:', fallbackErr);
+      }
     }
 
     return { userId, email };
@@ -181,16 +201,87 @@ class AuthService {
    * Resend verification email
    */
   async resendVerification(email: string): Promise<void> {
+    const trimmedEmail = email.trim();
     const { error } = await supabaseAdmin.auth.resend({
       type: 'signup',
-      email,
+      email: trimmedEmail,
       options: {
         emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifikasi-email`,
       },
     });
 
     if (error) {
+      console.error(`[ResendVerification] Gagal mengirim email via Supabase: ${error.message}`);
+
+      // Fallback: Generate verification link programmatically so developer/tester can see it in logs
+      try {
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: trimmedEmail,
+          options: {
+            redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifikasi-email`,
+          }
+        });
+
+        if (!linkError && linkData?.properties?.action_link) {
+          console.log('\n================================================================');
+          console.log(`[DEVELOPMENT FALLBACK] Link Verifikasi Registrasi (${trimmedEmail}):`);
+          console.log(linkData.properties.action_link);
+          console.log('================================================================\n');
+        }
+      } catch (fallbackErr) {
+        console.error('[ResendVerification] Gagal membuat link fallback:', fallbackErr);
+      }
+
       throw new Error(`Gagal mengirim ulang email verifikasi: ${error.message}`);
+    }
+  }
+
+  /**
+   * Send password reset email
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const trimmedEmail = email.trim();
+    
+    // Check if email exists in profiles (case-insensitive)
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .ilike('email', trimmedEmail)
+      .single();
+
+    if (!profile) {
+      throw new Error('Email tidak terdaftar di sistem kami.');
+    }
+
+    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(trimmedEmail, {
+      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+    });
+
+    if (error) {
+      console.error(`[ForgotPassword] Gagal mengirim email via Supabase: ${error.message}`);
+
+      // Fallback: Generate recovery link programmatically so developer/tester can see it in logs
+      try {
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'recovery',
+          email: trimmedEmail,
+          options: {
+            redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+          }
+        });
+
+        if (!linkError && linkData?.properties?.action_link) {
+          console.log('\n================================================================');
+          console.log(`[DEVELOPMENT FALLBACK] Link Pemulihan Kata Sandi (${trimmedEmail}):`);
+          console.log(linkData.properties.action_link);
+          console.log('================================================================\n');
+        }
+      } catch (fallbackErr) {
+        console.error('[ForgotPassword] Gagal membuat link fallback:', fallbackErr);
+      }
+
+      throw new Error(`Gagal mengirim email pemulihan kata sandi: ${error.message}`);
     }
   }
 
