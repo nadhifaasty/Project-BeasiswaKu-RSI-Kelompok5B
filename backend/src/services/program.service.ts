@@ -81,7 +81,7 @@ class ProgramService {
         kuota: payload.quota,
         sisa_kuota: payload.quota,
         deadline: payload.deadline,
-        status: 'DRAFT', // Default status
+        status: 'aktif', // Default status
       })
       .select()
       .single();
@@ -103,8 +103,10 @@ class ProgramService {
     const program = await this.getProgramById(programId);
     
     if (program.status === 'aktif') {
-      if (payload.nominal || payload.quota) {
-        throw new Error("Program aktif tidak dapat diedit field intinya. Tutup program terlebih dahulu.");
+      const isNominalChanged = payload.nominal !== undefined && payload.nominal !== Number(program.nominal);
+      const isQuotaChanged = payload.quota !== undefined && payload.quota !== program.kuota;
+      if (isNominalChanged || isQuotaChanged) {
+        throw new Error("Program aktif tidak dapat diedit kuota atau nominalnya. Tutup program terlebih dahulu.");
       }
     }
 

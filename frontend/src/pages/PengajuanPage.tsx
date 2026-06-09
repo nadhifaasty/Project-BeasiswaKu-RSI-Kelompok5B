@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Button, Card, Input } from '../components'
 import {
   getPrograms,
   createApplication,
   submitApplication,
+  getUserApplications,
   type ScholarshipProgram,
+  type Application,
 } from '../services/scholarship'
 import { getBiodataAkademik, getBiodataStatus } from '../services/biodata'
 import { fetchApi } from '../services/api'
@@ -48,6 +50,7 @@ function PengajuanPage() {
 
   // Step 1: Program
   const [programs, setPrograms] = useState<ScholarshipProgram[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
   const [selectedProgram, setSelectedProgram] = useState<ScholarshipProgram | null>(null)
   
   // Profile Data
@@ -78,11 +81,13 @@ function PengajuanPage() {
   async function loadInitialData() {
     try {
       setLoading(true)
-      const [progs, akad] = await Promise.all([
+      const [progs, akad, apps] = await Promise.all([
         getPrograms(),
-        getBiodataAkademik().catch(() => null)
+        getBiodataAkademik().catch(() => null),
+        getUserApplications().catch(() => [])
       ])
       setPrograms(progs)
+      setApplications(apps)
       if (akad) {
         setIpk(String(akad.ipk_nilai))
         setJenjang(akad.jenjang)
@@ -99,13 +104,17 @@ function PengajuanPage() {
     setMessage(null)
     try {
       const statusRes = await getBiodataStatus()
+      console.log("Biodata status from API:", statusRes)
+      
       if (statusRes.completion_pct < 100) {
-        setMessage({ type: 'error', text: 'ERR-PROF-01: Profil belum 100% lengkap. Harap lengkapi semua data biodata sebelum mengajukan beasiswa.' })
+        setMessage({ type: 'error', text: `ERR-PROF-01: Profil belum lengkap (${statusRes.completion_pct}%). Harap lengkapi semua data biodata sebelum mengajukan beasiswa.` })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
 
       if (program.sisa_kuota <= 0) {
         setMessage({ type: 'error', text: 'ERR-APP-02: Kuota program ini telah habis.' })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
 
@@ -325,49 +334,123 @@ function PengajuanPage() {
       )}
 
       {currentStep === 1 && (
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {programs.map((program) => {
-              const isMatch = studentIsCollege === (program.nama.toLowerCase().includes('perguruan') || program.nama.toLowerCase().includes('tinggi') || program.nama.toLowerCase().includes('mahasiswa'))
-              
-              return (
-                <Card key={program.id} className="flex flex-col justify-between">
-                  <div className="p-6">
-                    <div className="w-12 h-12 bg-gray-100 rounded-xl mb-4 flex items-center justify-center text-primary">
-                      {program.nama.includes('SMA') ? '🏫' : '🎓'}
+        <div className="space-y-12">
+          {/* Section: List Program Beasiswa */}
+          <div>
+            <h2 className="text-xl font-bold text-primary mb-6">Program Beasiswa Tersedia</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {programs.map((program) => {
+                const isMatch = studentIsCollege === (program.nama.toLowerCase().includes('perguruan') || program.nama.toLowerCase().includes('tinggi') || program.nama.toLowerCase().includes('mahasiswa'))
+                
+                return (
+                  <Card key={program.id} className="flex flex-col justify-between">
+                    <div className="p-6">
+                      <div className="w-12 h-12 bg-gray-100 rounded-xl mb-4 flex items-center justify-center text-primary">
+                        {program.nama.includes('SMA') ? '🏫' : '🎓'}
+                      </div>
+                      <h3 className="text-xl font-bold text-primary mb-1">{program.nama}</h3>
+                      <p className="text-sm text-gray-500 mb-6">{program.deskripsi}</p>
+                      
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-gray-500">Nominal Beasiswa</span>
+                          <span className="font-semibold">{program.nominal}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-gray-500">Sisa Kuota</span>
+                          <span className="font-semibold">{program.sisa_kuota} Penerima</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-gray-500">Batas Pendaftaran</span>
+                          <span className="font-semibold text-red-600">
+                            {new Date(program.deadline).toLocaleDateString('id-ID', { dateStyle: 'medium' })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold text-primary mb-1">{program.nama}</h3>
-                    <p className="text-sm text-gray-500 mb-6">{program.deskripsi}</p>
-                    
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-gray-500">Nominal Beasiswa</span>
-                        <span className="font-semibold">{program.nominal}</span>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-gray-500">Sisa Kuota</span>
-                        <span className="font-semibold">{program.sisa_kuota} Penerima</span>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-gray-500">Batas Pendaftaran</span>
-                        <span className="font-semibold text-red-600">
-                          {new Date(program.deadline).toLocaleDateString('id-ID', { dateStyle: 'medium' })}
-                        </span>
-                      </div>
+                    <div className="p-4 bg-gray-50 rounded-b-xl flex justify-end">
+                      <Button 
+                        variant="primary" 
+                        onClick={() => handleSelectProgram(program)}
+                        disabled={!isMatch || program.sisa_kuota <= 0 || program.status !== 'aktif'}
+                      >
+                        {program.sisa_kuota <= 0 ? 'Kuota Habis' : !isMatch ? 'Tidak Sesuai Jenjang' : 'Pilih Program →'}
+                      </Button>
                     </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-b-xl flex justify-end">
-                    <Button 
-                      variant="primary" 
-                      onClick={() => handleSelectProgram(program)}
-                      disabled={!isMatch || program.sisa_kuota <= 0 || program.status !== 'aktif'}
-                    >
-                      {program.sisa_kuota <= 0 ? 'Kuota Habis' : !isMatch ? 'Tidak Sesuai Jenjang' : 'Pilih Program →'}
-                    </Button>
-                  </div>
-                </Card>
-              )
-            })}
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Section: Riwayat Pengajuan */}
+          <div>
+            <h2 className="text-xl font-bold text-primary mb-6">Riwayat Pengajuan Beasiswa</h2>
+            {applications.length === 0 ? (
+              <Card className="p-8 text-center bg-gray-50 border border-gray-100 shadow-sm">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                </div>
+                <h3 className="font-semibold text-gray-700">Belum Ada Riwayat</h3>
+                <p className="text-sm text-gray-500 mt-1">Anda belum pernah mengajukan beasiswa apa pun.</p>
+              </Card>
+            ) : (
+              <Card>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-sm text-slate-600">
+                        <th className="px-6 py-4 font-medium">No. Referensi</th>
+                        <th className="px-6 py-4 font-medium">Program Beasiswa</th>
+                        <th className="px-6 py-4 font-medium">Tanggal Pengajuan</th>
+                        <th className="px-6 py-4 font-medium">Status Terakhir</th>
+                        <th className="px-6 py-4 font-medium text-right">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {applications.map((app) => (
+                        <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-mono text-sm text-slate-600">
+                            {app.nomor_referensi}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-slate-900">{app.scholarship_programs?.nama}</div>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
+                            {new Date(app.created_at).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                              app.status === 'DITERIMA' ? 'bg-green-50 text-green-700 border-green-200' :
+                              app.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              app.status === 'TERVERIFIKASI' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              app.status === 'DITOLAK' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-gray-50 text-gray-700 border-gray-200'
+                            }`}>
+                              {app.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <Link 
+                              to="/lacak-status" 
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Lacak Detail
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
           </div>
         </div>
       )}

@@ -140,7 +140,7 @@ export default function AdminKelolaProgramPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-slate-900 font-medium">{prog.sisa_kuota}</span>
+                        <span className="text-slate-900 font-medium">{prog.kuota - prog.sisa_kuota}</span>
                         <span className="text-slate-400 text-sm">/ {prog.kuota}</span>
                       </div>
                     </td>
