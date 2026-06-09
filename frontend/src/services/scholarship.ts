@@ -121,3 +121,46 @@ export async function updateProgramStatusAdmin(id: string, status: 'aktif' | 'di
   })
   return res.data!
 }
+
+export interface SelectionWeights {
+  bobot_akademik: number
+  bobot_ekonomi: number
+  bobot_prestasi: number
+  bobot_dokumen: number
+}
+
+export async function updateSelectionWeights(programId: string, weights: SelectionWeights): Promise<any> {
+  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/weights`, {
+    method: 'PATCH',
+    body: JSON.stringify(weights),
+  })
+  return res.data!
+}
+
+export async function runSelection(programId: string, weights: SelectionWeights): Promise<any> {
+  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/run`, {
+    method: 'POST',
+    body: JSON.stringify(weights),
+  })
+  return res.data!
+}
+
+export async function getSelectionResults(programId: string): Promise<any> {
+  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/results`)
+  return res.data!
+}
+
+export async function finalizeSelection(programId: string): Promise<any> {
+  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/finalize`, {
+    method: 'POST',
+  })
+  return res.data!
+}
+
+export async function rollbackSelection(programId: string): Promise<any> {
+  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/rollback`, {
+    method: 'POST',
+  })
+  return res.data!
+}
+

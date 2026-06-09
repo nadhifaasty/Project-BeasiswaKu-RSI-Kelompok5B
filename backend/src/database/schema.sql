@@ -242,3 +242,15 @@ alter table public.audit_logs add column if not exists old_values jsonb;
 alter table public.audit_logs add column if not exists new_values jsonb;
 alter table public.audit_logs add column if not exists user_agent text;
 alter table public.audit_logs add column if not exists session_id text;
+- -   1 3 .   S E L E C T I O N   W E I G H T S 
+ c r e a t e   t a b l e   i f   n o t   e x i s t s   p u b l i c . s e l e c t i o n _ w e i g h t s   ( 
+     p r o g r a m _ i d   u u i d   p r i m a r y   k e y   r e f e r e n c e s   p u b l i c . s c h o l a r s h i p _ p r o g r a m s ( i d )   o n   d e l e t e   c a s c a d e   n o t   n u l l , 
+     b o b o t _ a k a d e m i k   n u m e r i c   n o t   n u l l   d e f a u l t   4 0 , 
+     b o b o t _ e k o n o m i   n u m e r i c   n o t   n u l l   d e f a u l t   3 5 , 
+     b o b o t _ p r e s t a s i   n u m e r i c   n o t   n u l l   d e f a u l t   1 5 , 
+     b o b o t _ d o k u m e n   n u m e r i c   n o t   n u l l   d e f a u l t   1 0 , 
+     u p d a t e d _ a t   t i m e s t a m p t z   n o t   n u l l   d e f a u l t   n o w ( ) 
+ ) ; 
+ a l t e r   t a b l e   p u b l i c . s e l e c t i o n _ w e i g h t s   e n a b l e   r o w   l e v e l   s e c u r i t y ; 
+  
+ 

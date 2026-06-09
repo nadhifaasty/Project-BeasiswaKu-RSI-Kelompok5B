@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Button } from '../../components'
 import { fetchApi } from '../../services/api'
+import { verifyMonthlyReport } from '../../services/report'
 
 interface FundReportItem {
   id: string
@@ -69,12 +70,9 @@ function AdminLaporanDanaPage() {
     setSuccessMessage(null)
 
     try {
-      await fetchApi<ApiResponse<FundReportItem>>(`/fund-reports/admin/${selectedReport.id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status,
-          catatan_admin: reviewNotes,
-        }),
+      await verifyMonthlyReport(selectedReport.id, {
+        status,
+        catatan_admin: reviewNotes,
       })
 
       setSuccessMessage(`Laporan berhasil diverifikasi sebagai ${status === 'terverifikasi' ? 'VALID' : 'BUTUH REVISI'}.`)

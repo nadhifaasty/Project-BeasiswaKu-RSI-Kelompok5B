@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Button } from '../../components'
 import { fetchApi } from '../../services/api'
-import { getPrograms, type ScholarshipProgram } from '../../services/scholarship'
+import { getPrograms, runSelection, getSelectionResults, finalizeSelection, rollbackSelection, type ScholarshipProgram } from '../../services/scholarship'
 
 interface RankingItem {
   rank: number
@@ -90,9 +90,9 @@ function SelectionPage() {
   async function loadResults(programId: string) {
     setErrorMessage(null)
     try {
-      const res = await fetchApi<ApiResponse<SelectionResultsResponse>>(`/admin/selections/${programId}/results`)
-      setRankingData(res.data.ranking)
-      setIsFinalized(res.data.is_finalized)
+      const res = await getSelectionResults(programId)
+      setRankingData(res.ranking)
+      setIsFinalized(res.is_finalized)
     } catch {
       // If no results calculated yet, it's normal to have empty results
       setRankingData([])
@@ -112,18 +112,15 @@ function SelectionPage() {
     setSuccessMessage(null)
 
     try {
-      const res = await fetchApi<ApiResponse<RunSelectionResponse>>(`/admin/selections/${selectedProgramId}/run`, {
-        method: 'POST',
-        body: JSON.stringify({
-          bobot_akademik: wAkademik,
-          bobot_ekonomi: wEkonomi,
-          bobot_prestasi: wPrestasi,
-          bobot_dokumen: wDokumen,
-        }),
+      const res = await runSelection(selectedProgramId, {
+        bobot_akademik: wAkademik,
+        bobot_ekonomi: wEkonomi,
+        bobot_prestasi: wPrestasi,
+        bobot_dokumen: wDokumen,
       })
 
-      setRankingData(res.data.ranking)
-      setSuccessMessage(`Kalkulasi selesai. Berhasil memproses ${res.data.total_candidates} kandidat.`)
+      setRankingData(res.ranking)
+      setSuccessMessage(`Kalkulasi selesai. Berhasil memproses ${res.total_candidates} kandidat.`)
       // Refresh finalized status
       await loadResults(selectedProgramId)
     } catch (err: any) {
@@ -141,9 +138,7 @@ function SelectionPage() {
     setShowFinalizeModal(false)
 
     try {
-      await fetchApi<ApiResponse<any>>(`/admin/selections/${selectedProgramId}/finalize`, {
-        method: 'POST',
-      })
+      await finalizeSelection(selectedProgramId)
       setSuccessMessage('Hasil seleksi berhasil disahkan! Status pendaftar telah diperbarui secara resmi.')
       setIsFinalized(true)
       await loadResults(selectedProgramId)
@@ -165,9 +160,7 @@ function SelectionPage() {
     setSuccessMessage(null)
 
     try {
-      await fetchApi<ApiResponse<any>>(`/admin/selections/${selectedProgramId}/rollback`, {
-        method: 'POST',
-      })
+      await rollbackSelection(selectedProgramId)
       setSuccessMessage('Pengesahan berhasil dibatalkan! Status pendaftar telah dikembalikan menjadi TERVERIFIKASI.')
       setIsFinalized(false)
       await loadResults(selectedProgramId)

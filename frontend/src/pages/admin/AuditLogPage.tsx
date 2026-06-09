@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, Button } from '../../components'
-import { fetchApi } from '../../services/api'
+import { getAuditLogs } from '../../services/system'
 
 interface AuditLog {
   id: string
@@ -44,15 +44,16 @@ function AuditLogPage() {
     setLoading(true)
     setErrorMessage(null)
     try {
-      const params = new URLSearchParams()
-      params.append('page', String(page))
-      params.append('per_page', '15')
-      if (actionType) params.append('action_type', actionType)
-      if (userIdFilter) params.append('user_id', userIdFilter)
-      if (startDate) params.append('start_date', new Date(startDate).toISOString())
-      if (endDate) params.append('end_date', new Date(endDate).toISOString())
+      const paramsObj: Record<string, string> = {
+        page: String(page),
+        per_page: '15'
+      }
+      if (actionType) paramsObj.action_type = actionType
+      if (userIdFilter) paramsObj.user_id = userIdFilter
+      if (startDate) paramsObj.start_date = new Date(startDate).toISOString()
+      if (endDate) paramsObj.end_date = new Date(endDate).toISOString()
 
-      const res = await fetchApi<any>(`/admin/audit-logs?${params.toString()}`)
+      const res = await getAuditLogs(paramsObj)
       
       // The API return is wrapped in sendSuccess envelope
       // Which means it is { success: true, message: "...", data: { data: [...], meta: {...} } }

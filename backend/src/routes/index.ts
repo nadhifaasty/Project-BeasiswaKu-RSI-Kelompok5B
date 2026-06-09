@@ -10,6 +10,7 @@ import adminRoutes from './admin.routes';
 import fundReportRoutes from './fund-report.routes';
 import disbursementRoutes from './disbursement.routes';
 import systemRoutes from './system.routes';
+import reportRoutes from './report.routes';
 
 const router = Router();
 
@@ -32,8 +33,11 @@ router.use('/scholarship/programs', programRoutes);
 // Document routes
 router.use('/documents', documentRoutes);
 
-// Fund report routes
+// Fund report routes (Legacy, kept for compatibility if needed)
 router.use('/fund-reports', fundReportRoutes);
+
+// TSD Reports (Export and Monthly)
+router.use('/reports', reportRoutes);
 
 // Disbursement routes
 router.use('/disbursements', disbursementRoutes);

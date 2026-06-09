@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getAuditLogs, getEvaluations } from '../controllers/admin.controller';
-import { runSelection, getSelectionResults, finalizeSelection, rollbackSelection } from '../controllers/selection.controller';
+import { runSelection, getSelectionResults, finalizeSelection, rollbackSelection, updateWeights } from '../controllers/selection.controller';
 import { getSuperAdminMetrics, getMonitoring } from '../controllers/dashboard.controller';
 import { verifyJWT } from '../middlewares/auth.middleware';
 import { checkRole } from '../middlewares/rbac.middleware';
@@ -21,6 +21,9 @@ router.post('/selections/:programId/run', verifyJWT, checkRole(['admin', 'super_
 
 // GET /api/admin/selections/:programId/results
 router.get('/selections/:programId/results', verifyJWT, checkRole(['admin', 'super_admin']), getSelectionResults);
+
+// PATCH /api/admin/selections/:programId/weights
+router.patch('/selections/:programId/weights', verifyJWT, checkRole(['admin', 'super_admin']), updateWeights);
 
 // POST /api/admin/selections/:programId/finalize
 router.post('/selections/:programId/finalize', verifyJWT, checkRole(['admin', 'super_admin']), finalizeSelection);

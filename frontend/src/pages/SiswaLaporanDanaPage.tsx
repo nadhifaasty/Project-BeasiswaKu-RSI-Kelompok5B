@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Card, Button, Input } from '../components'
 import { fetchApi } from '../services/api'
 import { getUserApplications, type Application } from '../services/scholarship'
+import { getMonthlyReports, submitMonthlyReport } from '../services/report'
+import { useAuth } from '../context/AuthContext'
 
 interface FundReportItem {
   id: string
@@ -23,6 +25,7 @@ interface ApiResponse<T> {
 }
 
 function SiswaLaporanDanaPage() {
+  const { user } = useAuth()
   const [applications, setApplications] = useState<Application[]>([])
   const [reports, setReports] = useState<FundReportItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,10 +55,10 @@ function SiswaLaporanDanaPage() {
       setApplications(apps)
       
       const activeAccepted = apps.find((a) => a.status === 'DITERIMA')
-      if (activeAccepted) {
+      if (activeAccepted && user) {
         // Fetch existing reports
-        const reportsRes = await fetchApi<ApiResponse<FundReportItem[]>>('/fund-reports')
-        setReports(reportsRes.data)
+        const reportsData = await getMonthlyReports(user.id)
+        setReports(reportsData)
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Gagal memuat data laporan dana.')
@@ -80,16 +83,13 @@ function SiswaLaporanDanaPage() {
       // Simulate file upload if exist
       const dummyUrl = receiptFile ? `https://storage.beasiswaku.com/receipts/${Date.now()}_${receiptFile.name}` : ''
 
-      await fetchApi<ApiResponse<FundReportItem>>('/fund-reports', {
-        method: 'POST',
-        body: JSON.stringify({
-          application_id: acceptedApp.id,
-          bulan,
-          kategori,
-          jumlah: Number(jumlah),
-          keterangan,
-          bukti_url: dummyUrl || undefined,
-        }),
+      await submitMonthlyReport({
+        application_id: acceptedApp.id,
+        bulan,
+        kategori,
+        jumlah: Number(jumlah),
+        keterangan,
+        bukti_url: dummyUrl || undefined,
       })
 
       setSuccessMessage('Laporan penggunaan dana berhasil dikirim!')

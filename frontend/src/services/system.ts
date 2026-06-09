@@ -32,3 +32,17 @@ export async function updateSystemSettings(payload: UpdateSystemSettingsPayload)
   })
   return res.data
 }
+
+export async function getAuditLogs(params?: Record<string, string>): Promise<any> {
+  const searchParams = new URLSearchParams()
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.append(key, value)
+    })
+  }
+
+  const query = searchParams.toString()
+  const url = query ? `/admin/audit-logs?${query}` : '/admin/audit-logs'
+  const res = await fetchApi<any>(url)
+  return res
+}

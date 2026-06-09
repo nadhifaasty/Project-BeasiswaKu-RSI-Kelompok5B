@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card } from '../../components'
-import { fetchApi } from '../../services/api'
+import { getProgramReports } from '../../services/report'
 
 interface StatusDistribution {
   PENDING: number
@@ -42,8 +42,8 @@ function EvaluationsPage() {
     setLoading(true)
     setErrorMessage(null)
     try {
-      const res = await fetchApi<ApiResponse>('/admin/evaluations')
-      setEvaluations(res.data || [])
+      const data = await getProgramReports()
+      setEvaluations(data || [])
     } catch (err: any) {
       setErrorMessage(err.message || 'Gagal memuat data evaluasi program.')
     } finally {

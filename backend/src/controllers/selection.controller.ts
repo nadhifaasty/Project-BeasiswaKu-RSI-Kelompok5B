@@ -84,3 +84,31 @@ export const rollbackSelection = async (req: AuthenticatedRequest, res: Response
     sendError(res, error.message, 400);
   }
 };
+
+export const updateWeights = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { programId } = req.params;
+    const actorId = req.user!.userId;
+    const { bobot_akademik, bobot_ekonomi, bobot_prestasi, bobot_dokumen } = req.body;
+
+    if (!programId) {
+      sendError(res, 'Program ID wajib diisi.', 400);
+      return;
+    }
+
+    if (bobot_akademik === undefined || bobot_ekonomi === undefined || bobot_prestasi === undefined || bobot_dokumen === undefined) {
+      sendError(res, 'Semua bobot seleksi (akademik, ekonomi, prestasi, dokumen) wajib diisi.', 400);
+      return;
+    }
+
+    const data = await selectionService.updateWeights(programId, actorId, {
+      bobot_akademik: Number(bobot_akademik),
+      bobot_ekonomi: Number(bobot_ekonomi),
+      bobot_prestasi: Number(bobot_prestasi),
+      bobot_dokumen: Number(bobot_dokumen),
+    });
+    sendSuccess(res, data, 'Bobot seleksi berhasil disimpan.');
+  } catch (error: any) {
+    sendError(res, error.message, 400);
+  }
+};

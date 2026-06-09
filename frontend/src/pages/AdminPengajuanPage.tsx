@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Button, Card } from '../components'
 import { Badge } from '../components/shared'
 import { fetchApi } from '../services/api'
+import { exportReportExcel } from '../services/report'
 
 // ============ TYPES ============
 
@@ -43,6 +44,7 @@ function AdminPengajuanPage() {
   const [newStatus, setNewStatus] = useState('')
   const [catatan, setCatatan] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
@@ -61,6 +63,26 @@ function AdminPengajuanPage() {
       setMessage({ type: 'error', text: 'Gagal memuat data pengajuan.' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleExport() {
+    setExporting(true)
+    setMessage(null)
+    try {
+      const blob = await exportReportExcel(filter ? { status: filter } : undefined)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Data_Pengajuan_${filter || 'Semua'}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Gagal mengekspor data.' })
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -120,6 +142,17 @@ function AdminPengajuanPage() {
             <option value="DITOLAK">Ditolak</option>
             <option value="CADANGAN">Cadangan</option>
           </select>
+          <Button 
+            variant="outline" 
+            onClick={handleExport} 
+            loading={exporting}
+            className="ml-2 px-3 py-1.5 text-sm flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export Excel
+          </Button>
         </div>
       </div>
 

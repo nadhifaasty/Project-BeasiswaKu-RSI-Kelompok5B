@@ -13,6 +13,13 @@ export interface SelectionRankItem {
   status_rekomendasi: 'DITERIMA' | 'CADANGAN' | 'DITOLAK';
 }
 
+export interface SelectionWeights {
+  bobot_akademik: number;
+  bobot_ekonomi: number;
+  bobot_prestasi: number;
+  bobot_dokumen: number;
+}
+
 class SelectionService {
   /**
    * Run selection calculation for a program
@@ -400,6 +407,58 @@ class SelectionService {
     return {
       success: true,
       message: 'Pengesahan hasil seleksi berhasil dibatalkan dan status kembali menjadi TERVERIFIKASI.',
+    };
+  }
+
+  /**
+   * Update selection weights for a program
+   */
+  async updateWeights(programId: string, actorId: string, weights: SelectionWeights) {
+    const total = weights.bobot_akademik + weights.bobot_ekonomi + weights.bobot_prestasi + weights.bobot_dokumen;
+    if (total !== 100) {
+      throw new Error('Total keempat bobot harus berjumlah tepat 100%.');
+    }
+
+    // Check if selection results already exist and finalized
+    const { data: results, error: resError } = await supabaseAdmin
+      .from('selection_results')
+      .select('disahkan_at, applications!inner(program_id)')
+      .eq('applications.program_id', programId)
+      .not('disahkan_at', 'is', null)
+      .limit(1);
+    
+    if (results && results.length > 0) {
+      throw new Error('Seleksi sudah disahkan. Bobot tidak dapat diubah.');
+    }
+
+    const { error: upsertError } = await supabaseAdmin
+      .from('selection_weights')
+      .upsert({
+        program_id: programId,
+        bobot_akademik: weights.bobot_akademik,
+        bobot_ekonomi: weights.bobot_ekonomi,
+        bobot_prestasi: weights.bobot_prestasi,
+        bobot_dokumen: weights.bobot_dokumen,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'program_id' });
+
+    if (upsertError) {
+      throw new Error(`Gagal menyimpan bobot seleksi: ${upsertError.message}`);
+    }
+
+    // Record audit log
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: actorId,
+      aksi: 'UPDATE_SELECTION_WEIGHTS',
+      resource_type: 'selection_weights',
+      resource_id: programId,
+      new_values: weights as any,
+      created_at: new Date().toISOString(),
+    });
+
+    return {
+      program_id: programId,
+      ...weights
     };
   }
 }
