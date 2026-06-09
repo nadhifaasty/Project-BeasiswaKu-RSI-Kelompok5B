@@ -63,22 +63,22 @@ interface ApiResponse<T> {
 // ============ API CALLS ============
 
 export async function getAllBiodata(): Promise<AllBiodata> {
-  const res = await fetchApi<ApiResponse<AllBiodata>>('/biodata')
+  const res = await fetchApi<ApiResponse<AllBiodata>>('/users/me/profile')
   return res.data
 }
 
 export async function getBiodataStatus(): Promise<{ completion_pct: number }> {
-  const res = await fetchApi<ApiResponse<{ completion_pct: number }>>('/biodata/status')
+  const res = await fetchApi<ApiResponse<{ completion_pct: number }>>('/users/me/profile/status')
   return res.data
 }
 
 export async function getBiodataPribadi(): Promise<BiodataPribadi | null> {
-  const res = await fetchApi<ApiResponse<BiodataPribadi | null>>('/biodata/pribadi')
+  const res = await fetchApi<ApiResponse<BiodataPribadi | null>>('/users/me/profile/pribadi')
   return res.data
 }
 
 export async function saveBiodataPribadi(payload: BiodataPribadi): Promise<BiodataPribadi> {
-  const res = await fetchApi<ApiResponse<BiodataPribadi>>('/biodata/pribadi', {
+  const res = await fetchApi<ApiResponse<BiodataPribadi>>('/users/me/profile/pribadi', {
     method: 'PUT',
     body: JSON.stringify(payload),
   })
@@ -86,12 +86,12 @@ export async function saveBiodataPribadi(payload: BiodataPribadi): Promise<Bioda
 }
 
 export async function getBiodataAlamat(): Promise<BiodataAlamat | null> {
-  const res = await fetchApi<ApiResponse<BiodataAlamat | null>>('/biodata/alamat')
+  const res = await fetchApi<ApiResponse<BiodataAlamat | null>>('/users/me/profile/alamat')
   return res.data
 }
 
 export async function saveBiodataAlamat(payload: BiodataAlamat): Promise<BiodataAlamat> {
-  const res = await fetchApi<ApiResponse<BiodataAlamat>>('/biodata/alamat', {
+  const res = await fetchApi<ApiResponse<BiodataAlamat>>('/users/me/profile/alamat', {
     method: 'PUT',
     body: JSON.stringify(payload),
   })
@@ -99,12 +99,12 @@ export async function saveBiodataAlamat(payload: BiodataAlamat): Promise<Biodata
 }
 
 export async function getBiodataOrangTua(): Promise<BiodataOrangTua | null> {
-  const res = await fetchApi<ApiResponse<BiodataOrangTua | null>>('/biodata/orang-tua')
+  const res = await fetchApi<ApiResponse<BiodataOrangTua | null>>('/users/me/profile/orang-tua')
   return res.data
 }
 
 export async function saveBiodataOrangTua(payload: BiodataOrangTua): Promise<BiodataOrangTua> {
-  const res = await fetchApi<ApiResponse<BiodataOrangTua>>('/biodata/orang-tua', {
+  const res = await fetchApi<ApiResponse<BiodataOrangTua>>('/users/me/profile/orang-tua', {
     method: 'PUT',
     body: JSON.stringify(payload),
   })
@@ -112,12 +112,12 @@ export async function saveBiodataOrangTua(payload: BiodataOrangTua): Promise<Bio
 }
 
 export async function getBiodataAkademik(): Promise<BiodataAkademik | null> {
-  const res = await fetchApi<ApiResponse<BiodataAkademik | null>>('/biodata/akademik')
+  const res = await fetchApi<ApiResponse<BiodataAkademik | null>>('/users/me/profile/akademik')
   return res.data
 }
 
 export async function saveBiodataAkademik(payload: BiodataAkademik): Promise<BiodataAkademik> {
-  const res = await fetchApi<ApiResponse<BiodataAkademik>>('/biodata/akademik', {
+  const res = await fetchApi<ApiResponse<BiodataAkademik>>('/users/me/profile/akademik', {
     method: 'PUT',
     body: JSON.stringify(payload),
   })

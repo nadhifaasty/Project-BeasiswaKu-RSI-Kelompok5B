@@ -74,7 +74,7 @@ export async function verifyMonthlyReport(id: string, payload: { status: 'terver
 }
 
 export async function getProgramReports(id?: string): Promise<any> {
-  const url = id ? `/admin/reports/programs/${id}` : '/admin/evaluations'
+  const url = id ? `/reports/programs/${id}` : '/reports/programs'
   const res = await fetchApi<ApiResponse<any>>(url)
   return res.data || res
 }

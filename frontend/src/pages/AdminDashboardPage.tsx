@@ -36,7 +36,7 @@ function AdminDashboardPage() {
   async function loadData() {
     try {
       setLoading(true)
-      const res = await fetchApi<ApiResponse<AdminApplication[]>>('/scholarship/admin/applications')
+      const res = await fetchApi<ApiResponse<AdminApplication[]>>('/applications')
       const apps = res.data
       setApplications(apps)
 

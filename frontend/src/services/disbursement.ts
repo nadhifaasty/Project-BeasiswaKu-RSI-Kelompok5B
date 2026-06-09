@@ -65,6 +65,6 @@ export async function verifyDisbursement(id: string, is_verified: boolean, catat
 }
 
 export async function getBankAccountByUserId(userId: string): Promise<DisbursementData | null> {
-  const res = await fetchApi<ApiResponse<DisbursementData | null>>(`/users/${userId}/bank-account`)
+  const res = await fetchApi<ApiResponse<DisbursementData | null>>(`/system/users/${userId}/bank-account`)
   return res.data
 }

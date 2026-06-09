@@ -116,7 +116,7 @@ function AdminPengajuanPage() {
       setLoading(true)
       const query = filter ? `?status=${filter}` : ''
       const res = await fetchApi<ApiResponse<AdminApplication[]>>(
-        `/scholarship/admin/applications${query}`
+        `/applications${query}`
       )
       setApplications(res.data)
     } catch {
@@ -151,7 +151,7 @@ function AdminPengajuanPage() {
     setUpdating(true)
     setMessage(null)
     try {
-      await fetchApi(`/scholarship/admin/applications/${selectedApp.id}/status`, {
+      await fetchApi(`/applications/${selectedApp.id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus, catatan_admin: catatan || undefined }),
       })

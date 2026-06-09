@@ -73,17 +73,17 @@ export async function getProgramById(id: string): Promise<ScholarshipProgram> {
 }
 
 export async function getUserApplications(): Promise<Application[]> {
-  const res = await fetchApi<ApiResponse<Application[]>>('/scholarship/applications')
+  const res = await fetchApi<ApiResponse<Application[]>>('/applications/my')
   return res.data
 }
 
 export async function getApplicationById(id: string): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>(`/scholarship/applications/${id}`)
+  const res = await fetchApi<ApiResponse<Application>>(`/applications/${id}`)
   return res.data
 }
 
 export async function createApplication(payload: CreateApplicationPayload): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>('/scholarship/applications', {
+  const res = await fetchApi<ApiResponse<Application>>('/applications', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
@@ -91,7 +91,7 @@ export async function createApplication(payload: CreateApplicationPayload): Prom
 }
 
 export async function submitApplication(applicationId: string): Promise<Application> {
-  const res = await fetchApi<ApiResponse<Application>>(`/scholarship/applications/${applicationId}/submit`, {
+  const res = await fetchApi<ApiResponse<Application>>(`/applications/${applicationId}/submit`, {
     method: 'POST',
     body: JSON.stringify({ confirmation: true }),
   })
@@ -130,7 +130,7 @@ export interface SelectionWeights {
 }
 
 export async function updateSelectionWeights(programId: string, weights: SelectionWeights): Promise<any> {
-  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/weights`, {
+  const res = await fetchApi<ApiResponse<any>>(`/selections/${programId}/weights`, {
     method: 'PATCH',
     body: JSON.stringify(weights),
   })
@@ -138,7 +138,7 @@ export async function updateSelectionWeights(programId: string, weights: Selecti
 }
 
 export async function runSelection(programId: string, weights: SelectionWeights): Promise<any> {
-  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/run`, {
+  const res = await fetchApi<ApiResponse<any>>(`/selections/${programId}/run`, {
     method: 'POST',
     body: JSON.stringify(weights),
   })
@@ -146,19 +146,19 @@ export async function runSelection(programId: string, weights: SelectionWeights)
 }
 
 export async function getSelectionResults(programId: string): Promise<any> {
-  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/results`)
+  const res = await fetchApi<ApiResponse<any>>(`/selections/${programId}/results`)
   return res.data!
 }
 
 export async function finalizeSelection(programId: string): Promise<any> {
-  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/finalize`, {
+  const res = await fetchApi<ApiResponse<any>>(`/selections/${programId}/finalize`, {
     method: 'POST',
   })
   return res.data!
 }
 
 export async function rollbackSelection(programId: string): Promise<any> {
-  const res = await fetchApi<ApiResponse<any>>(`/admin/selections/${programId}/rollback`, {
+  const res = await fetchApi<ApiResponse<any>>(`/selections/${programId}/rollback`, {
     method: 'POST',
   })
   return res.data!
