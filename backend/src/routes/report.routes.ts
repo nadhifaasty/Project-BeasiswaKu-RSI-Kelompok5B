@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { verifyJWT } from '../middlewares/auth.middleware';
 import { checkRole } from '../middlewares/rbac.middleware';
 import { exportExcel } from '../controllers/report.controller';
+import { getEvaluations } from '../controllers/admin.controller';
 import {
   createReport,
   getUserReports,
@@ -10,6 +11,12 @@ import {
 } from '../controllers/fund-report.controller';
 
 const router = Router();
+
+// ==========================================
+// TSD 6.b: Laporan Program Beasiswa
+// ==========================================
+router.get('/programs', verifyJWT, checkRole(['admin', 'super_admin']), getEvaluations);
+router.get('/programs/:id', verifyJWT, checkRole(['admin', 'super_admin']), getEvaluations);
 
 // ==========================================
 // TSD 6.c: Export Excel Laporan Pendaftar

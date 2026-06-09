@@ -11,7 +11,7 @@ async function main() {
     console.error(error);
     return;
   }
-  
+
   console.log("=== USERS ===");
   for (const p of profiles || []) {
     console.log(`- ${p.email} | Role: ${p.role} | Nama: ${p.nama_lengkap}`);

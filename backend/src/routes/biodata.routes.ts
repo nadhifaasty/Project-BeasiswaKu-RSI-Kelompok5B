@@ -18,26 +18,26 @@ const router = Router();
 // All biodata routes require authentication
 router.use(verifyJWT);
 
-// GET /api/biodata - Get all biodata sections
-router.get('/', getAllBiodata);
+// GET /api/v1/users/:id/profile - Get all biodata sections
+router.get('/:id/profile', getAllBiodata);
 
-// GET /api/biodata/status - Get biodata progress
-router.get('/status', getBiodataStatus);
+// GET /api/v1/users/:id/profile/status - Get biodata progress
+router.get('/:id/profile/status', getBiodataStatus);
 
 // Biodata Pribadi
-router.get('/pribadi', getPribadi);
-router.put('/pribadi', upsertPribadi);
+router.get('/:id/profile/pribadi', getPribadi);
+router.put('/:id/profile/pribadi', upsertPribadi);
 
 // Biodata Alamat
-router.get('/alamat', getAlamat);
-router.put('/alamat', upsertAlamat);
+router.get('/:id/profile/alamat', getAlamat);
+router.put('/:id/profile/alamat', upsertAlamat);
 
 // Biodata Orang Tua
-router.get('/orang-tua', getOrangTua);
-router.put('/orang-tua', upsertOrangTua);
+router.get('/:id/profile/orang-tua', getOrangTua);
+router.put('/:id/profile/orang-tua', upsertOrangTua);
 
 // Biodata Akademik
-router.get('/akademik', getAkademik);
-router.put('/akademik', upsertAkademik);
+router.get('/:id/profile/akademik', getAkademik);
+router.put('/:id/profile/akademik', upsertAkademik);
 
 export default router;

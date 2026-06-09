@@ -3,11 +3,11 @@ import { healthCheck } from '../controllers';
 import { supabaseAdmin } from '../config/supabase';
 import authRoutes from './auth.routes';
 import biodataRoutes from './biodata.routes';
-import scholarshipRoutes from './scholarship.routes';
+import applicationRoutes from './application.routes';
 import documentRoutes from './document.routes';
 import programRoutes from './program.routes';
 import adminRoutes from './admin.routes';
-import fundReportRoutes from './fund-report.routes';
+import selectionRoutes from './selection.routes';
 import disbursementRoutes from './disbursement.routes';
 import systemRoutes from './system.routes';
 import reportRoutes from './report.routes';
@@ -20,21 +20,20 @@ router.get('/health', healthCheck);
 // Auth routes
 router.use('/auth', authRoutes);
 
-// Biodata routes
-router.use('/biodata', biodataRoutes);
+// User & Biodata routes
+router.use('/users', biodataRoutes);
 
-// Scholarship routes
-router.use('/scholarship', scholarshipRoutes);
+// Scholarship Applications routes
+router.use('/applications', applicationRoutes);
 
 // Programs routes
 router.use('/programs', programRoutes);
-router.use('/scholarship/programs', programRoutes);
 
 // Document routes
 router.use('/documents', documentRoutes);
 
-// Fund report routes (Legacy, kept for compatibility if needed)
-router.use('/fund-reports', fundReportRoutes);
+// Selection routes
+router.use('/selections', selectionRoutes);
 
 // TSD Reports (Export and Monthly)
 router.use('/reports', reportRoutes);
@@ -44,13 +43,9 @@ router.use('/disbursements', disbursementRoutes);
 
 // System routes
 router.use('/system', systemRoutes);
-router.use('/', systemRoutes);
 
-// Admin / Super Admin routes
-// Sesuai konvensi user menggunakan /super-admin dan TSD menggunakan /api/v1/admin
-// Kita mount ke /super-admin dan /admin sebagai alias jika diperlukan
+// Admin Dashboard & Logs
 router.use('/admin', adminRoutes);
-router.use('/super-admin', adminRoutes);
 
 // Supabase connection test
 router.get('/env-test', (_req, res) => {

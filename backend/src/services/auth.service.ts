@@ -48,20 +48,26 @@ class AuthService {
       throw new Error('NIM/NISN sudah terdaftar. Silakan periksa kembali.');
     }
 
-    // 3. Create user in Supabase Auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // 3. Create user in Supabase Auth using standard signUp (auto sends verification email)
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: false, // Set to false to trigger verification email
-      user_metadata: {
-        nama_lengkap,
-        nim_nisn,
-        nomor_hp,
+      options: {
+        data: {
+          nama_lengkap,
+          nim_nisn,
+          nomor_hp,
+        },
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifikasi-email`,
       },
     });
 
     if (authError) {
       throw new Error(`Gagal membuat akun: ${authError.message}`);
+    }
+
+    if (!authData.user) {
+      throw new Error('Gagal membuat akun: Data user tidak ditemukan.');
     }
 
     const userId = authData.user.id;
@@ -83,21 +89,6 @@ class AuthService {
       // Rollback: delete the auth user if profile insert fails
       await supabaseAdmin.auth.admin.deleteUser(userId);
       throw new Error(`Gagal menyimpan profil: ${profileError.message}`);
-    }
-
-    // 5. Send verification email via Supabase resend API
-    // Menggunakan resend() karena createUser() di atas tidak otomatis mengirim email jika email_confirm: false
-    const { error: sendError } = await supabaseAdmin.auth.resend({
-      type: 'signup',
-      email,
-      options: {
-        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifikasi-email`,
-      },
-    });
-
-    if (sendError) {
-      console.error('Warning: Failed to send verification email:', sendError.message);
-      // Non-fatal: user is created, they can request resend via UI
     }
 
     return { userId, email };
