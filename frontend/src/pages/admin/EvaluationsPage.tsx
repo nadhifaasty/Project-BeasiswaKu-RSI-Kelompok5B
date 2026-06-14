@@ -23,11 +23,6 @@ interface EvaluationItem {
   avg_penghasilan_ortu: number
 }
 
-interface ApiResponse {
-  success: boolean
-  message: string
-  data: EvaluationItem[]
-}
 
 function EvaluationsPage() {
   const [evaluations, setEvaluations] = useState<EvaluationItem[]>([])

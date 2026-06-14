@@ -28,6 +28,9 @@ export interface JwtPayload {
   userId: string;
   email: string;
   role: UserRole;
+  jti?: string;
+  sub?: string;
+  exp?: number;
 }
 
 export interface TokenPair {

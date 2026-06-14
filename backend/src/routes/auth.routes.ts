@@ -7,7 +7,10 @@ import {
   refreshToken,
   forgotPassword,
   resetPassword,
+  getMe,
+  logout,
 } from '../controllers/auth.controller';
+import { verifyJWT } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -31,5 +34,11 @@ router.post('/forgot-password', forgotPassword);
 
 // POST /api/auth/reset-password
 router.post('/reset-password', resetPassword);
+
+// GET /api/auth/me
+router.get('/me', verifyJWT, getMe);
+
+// POST /api/auth/logout
+router.post('/logout', verifyJWT, logout);
 
 export default router;

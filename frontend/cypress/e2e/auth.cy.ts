@@ -1,4 +1,8 @@
 describe('Authentication Flow', () => {
+  before(() => {
+    cy.task('seedDatabase');
+  });
+
   beforeEach(() => {
     cy.visit('/login');
   });

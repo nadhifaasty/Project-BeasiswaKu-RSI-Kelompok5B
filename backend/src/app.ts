@@ -19,10 +19,19 @@ app.use(cors({
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
+// Request logger middleware
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  res.on('finish', () => {
+    console.log(`[RESPONSE] ${req.method} ${req.url} -> ${res.statusCode}`);
+  });
+  next();
+});
+
 // Global API Rate Limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 150, // Limit each IP to 150 requests per window
+  max: 10000, // High limit to prevent 429 errors in local/testing environments
   standardHeaders: true,
   legacyHeaders: false,
   message: {

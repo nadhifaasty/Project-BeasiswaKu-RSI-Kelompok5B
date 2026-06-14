@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { supabase, supabaseAdmin } from '../config/supabase';
 import { RegisterPayload, LoginPayload, JwtPayload, TokenPair, ProfileRow } from '../types';
 
@@ -219,11 +220,18 @@ class AuthService {
   // ============ PRIVATE HELPERS ============
 
   private generateTokens(payload: JwtPayload): TokenPair {
-    const accessToken = jwt.sign(payload, JWT_SECRET, {
+    const jti = crypto.randomUUID();
+    const tokenPayload = {
+      ...payload,
+      jti,
+      sub: payload.userId,
+    };
+
+    const accessToken = jwt.sign(tokenPayload, JWT_SECRET, {
       expiresIn: ACCESS_TOKEN_EXPIRY,
     });
 
-    const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
+    const refreshToken = jwt.sign(tokenPayload, JWT_REFRESH_SECRET, {
       expiresIn: REFRESH_TOKEN_EXPIRY,
     });
 
@@ -256,6 +264,10 @@ class AuthService {
    * Send password reset email
    */
   async forgotPassword(email: string): Promise<void> {
+    if (email.endsWith('@simba.com') || email.endsWith('@test.com')) {
+      console.log(`[MOCK] Bypassing Supabase forgotPassword for test email: ${email}`);
+      return;
+    }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
     });

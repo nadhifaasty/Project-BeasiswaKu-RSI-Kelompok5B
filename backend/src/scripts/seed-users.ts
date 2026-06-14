@@ -57,9 +57,27 @@ async function seed() {
       });
 
       if (authError) {
-        // If user already exists, skip
+        // If user already exists, update their password and make sure profile is correct
         if (authError.message.includes('already been registered')) {
-          console.log(`⏭️  ${user.email} (${user.role}) - sudah ada, skip.`);
+          console.log(`⏭️  ${user.email} (${user.role}) - sudah ada, updating password...`);
+          const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+          const existingUser = users.find(u => u.email === user.email);
+          if (existingUser) {
+            await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+              password: user.password,
+              email_confirm: true,
+            });
+            // Upsert profile
+            await supabaseAdmin.from('profiles').upsert({
+              id: existingUser.id,
+              nama_lengkap: user.nama_lengkap,
+              nim_nisn: user.nim_nisn,
+              nomor_hp: user.nomor_hp,
+              email: user.email,
+              role: user.role,
+              biodata_progress: 0,
+            }, { onConflict: 'id' });
+          }
           continue;
         }
         throw authError;

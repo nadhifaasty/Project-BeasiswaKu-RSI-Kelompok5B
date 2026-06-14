@@ -286,7 +286,7 @@ function SiswaLaporanDanaPage() {
               Riwayat Pengiriman Laporan
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-3" data-testid="history-list">
               {reports.length > 0 ? (
                 reports.map((report) => (
                   <div key={report.id} className="border border-gray-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white shadow-sm">

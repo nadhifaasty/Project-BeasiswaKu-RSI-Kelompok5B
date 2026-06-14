@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/auth.service';
+import { redisService } from '../services/redis.service';
+import { supabase, supabaseAdmin } from '../config/supabase';
 import { sendSuccess, sendError } from '../utils';
-import { RegisterPayload, LoginPayload } from '../types';
+import { RegisterPayload, LoginPayload, AuthenticatedRequest } from '../types';
 
 /**
  * POST /auth/register
@@ -188,6 +190,80 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     await authService.resetPassword({ token, code, token_hash, password });
 
     sendSuccess(res, null, 'Kata sandi berhasil diperbarui. Silakan login kembali.');
+  } catch (error: any) {
+    sendError(res, error.message, 500);
+  }
+};
+
+/**
+ * GET /auth/me
+ * Retrieve currently logged in user profile details
+ */
+export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+
+    const { data: profile, error } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error || !profile) {
+      sendError(res, 'Profil pengguna tidak ditemukan.', 404);
+      return;
+    }
+
+    sendSuccess(res, {
+      id: profile.id,
+      nama_lengkap: profile.nama_lengkap,
+      email: profile.email,
+      role: profile.role,
+      nim_nisn: profile.nim_nisn,
+      nomor_hp: profile.nomor_hp,
+      biodata_progress: profile.biodata_progress,
+      created_at: profile.created_at,
+    }, 'Profil berhasil diambil.');
+  } catch (error: any) {
+    sendError(res, error.message, 500);
+  }
+};
+
+/**
+ * POST /auth/logout
+ * Log out user and blacklist JWT token
+ */
+export const logout = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      sendError(res, 'Token tidak ditemukan.', 400);
+      return;
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = req.user!;
+
+    if (decoded.jti && decoded.exp) {
+      await redisService.blacklistToken(decoded.jti, decoded.exp);
+    }
+
+    // Call Supabase signOut to clean session
+    await supabase.auth.signOut();
+
+    // Log the logout action in audit_logs
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: decoded.userId,
+      user_email: decoded.email,
+      user_role: decoded.role,
+      aksi: 'LOGOUT',
+      ip_address: req.ip || req.socket.remoteAddress,
+      user_agent: req.headers['user-agent'] as string || '',
+      session_id: decoded.jti || '',
+      level: 'INFO'
+    });
+
+    sendSuccess(res, null, 'Logout berhasil.');
   } catch (error: any) {
     sendError(res, error.message, 500);
   }

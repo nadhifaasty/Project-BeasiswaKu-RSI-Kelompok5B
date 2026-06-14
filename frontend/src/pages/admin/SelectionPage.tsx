@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, Button } from '../../components'
-import { fetchApi } from '../../services/api'
+
 import { getPrograms, runSelection, getSelectionResults, finalizeSelection, rollbackSelection, type ScholarshipProgram } from '../../services/scholarship'
 
 interface RankingItem {

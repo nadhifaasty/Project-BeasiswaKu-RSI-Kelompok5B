@@ -1,4 +1,8 @@
 describe('Selection Engine Flow', () => {
+  before(() => {
+    cy.task('seedDatabase');
+  });
+
   beforeEach(() => {
     // Login as admin
     cy.visit('/login');

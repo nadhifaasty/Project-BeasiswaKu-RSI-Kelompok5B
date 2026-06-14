@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
+import { redisService } from '../services/redis.service';
 import { sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
 
@@ -8,11 +9,11 @@ import { AuthenticatedRequest } from '../types';
  * Extracts Bearer token from Authorization header,
  * verifies it, and attaches decoded payload to req.user
  */
-export const verifyJWT = (
+export const verifyJWT = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -29,8 +30,17 @@ export const verifyJWT = (
     }
 
     const decoded = authService.verifyAccessToken(token);
-    req.user = decoded;
 
+    // Check if blacklisted (logged out)
+    if (decoded.jti) {
+      const isBlacklisted = await redisService.isTokenBlacklisted(decoded.jti);
+      if (isBlacklisted) {
+        sendError(res, 'Token sudah kedaluwarsa (logged out). Silakan login kembali.', 401);
+        return;
+      }
+    }
+
+    req.user = decoded;
     next();
   } catch (error: any) {
     sendError(res, 'Token tidak valid atau sudah kedaluwarsa. Silakan login kembali.', 401);

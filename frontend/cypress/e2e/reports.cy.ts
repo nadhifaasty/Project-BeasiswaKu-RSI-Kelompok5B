@@ -1,5 +1,6 @@
 describe('Fund Report & Verification Flow', () => {
   before(() => {
+    cy.task('seedDatabase');
     // 1. Prepare data by running selection and finalizing it as Admin
     // This turns top students into 'DITERIMA' state, allowing them to report fund usage
     cy.visit('/login');
@@ -11,6 +12,8 @@ describe('Fund Report & Verification Flow', () => {
     cy.get('a[href="/admin/seleksi"]').click();
     cy.url().should('include', '/admin/seleksi');
     cy.get('select').should('not.have.value', '');
+    cy.get('select option').should('have.length.at.least', 3);
+    cy.get('select').select('Beasiswa Perguruan Tinggi');
     cy.wait(2000);
     
     // Self-healing check: if already finalized, click Batalkan Pengesahan first so we can finalize cleanly
@@ -32,6 +35,7 @@ describe('Fund Report & Verification Flow', () => {
   });
 
   it('should allow accepted student to submit monthly report', () => {
+    cy.intercept('GET', '**/applications/my').as('getApps');
     // 2. Login as Ani Lestari (which ranked highly and is now DITERIMA)
     cy.visit('/login');
     cy.get('input[type="email"]').type('ani@test.com');
@@ -41,6 +45,11 @@ describe('Fund Report & Verification Flow', () => {
 
     // 3. Go to Laporan Dana Page
     cy.get('a[href="/laporan-dana"]').click();
+    
+    cy.wait('@getApps').then((interception) => {
+      cy.writeFile('cypress-response.json', JSON.stringify(interception.response.body, null, 2));
+    });
+
     cy.url().should('include', '/laporan-dana');
     cy.get('h1').should('contain', 'Laporan Penggunaan Dana');
 
@@ -62,8 +71,8 @@ describe('Fund Report & Verification Flow', () => {
 
     // 5. Verify success banner & new row in history table
     cy.get('div.bg-green-50', { timeout: 10000 }).should('contain', 'Laporan penggunaan dana berhasil dikirim');
-    cy.get('.border-gray-100').should('contain', 'Juni');
-    cy.get('.border-gray-100').should('contain', 'Menunggu Verifikasi');
+    cy.get('[data-testid="history-list"]').should('contain', 'Juni');
+    cy.get('[data-testid="history-list"]').should('contain', 'Menunggu Verifikasi');
 
     // Logout
     cy.get('aside button').contains('Keluar').click({ force: true });

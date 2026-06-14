@@ -98,16 +98,26 @@ async function seed() {
 
       if (authError) {
         if (authError.message.includes('already been registered')) {
-          console.log(`⏭️  Siswa ${stud.email} sudah terdaftar, lanjut seeding sub-criteria.`);
-          // If already registered, fetch profile to retrieve id
-          const { data: existingProf } = await supabaseAdmin
-            .from('profiles')
-            .select('id')
-            .eq('email', stud.email)
-            .single();
-          
-          if (existingProf) {
-            await insertSubCriteriaAndApplication(existingProf.id, stud, targetProgramId);
+          console.log(`⏭️  Siswa ${stud.email} sudah terdaftar, updating password...`);
+          const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+          const existingUser = users.find(u => u.email === stud.email);
+          if (existingUser) {
+            await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+              password: 'password123',
+              email_confirm: true,
+            });
+            // Upsert profile
+            await supabaseAdmin.from('profiles').upsert({
+              id: existingUser.id,
+              nama_lengkap: stud.name,
+              nim_nisn: stud.nisn,
+              nomor_hp: existingUser.user_metadata.nomor_hp || ('0812' + Math.floor(10000000 + Math.random() * 90000000)),
+              email: stud.email,
+              role: 'siswa',
+              biodata_progress: 100,
+            }, { onConflict: 'id' });
+
+            await insertSubCriteriaAndApplication(existingUser.id, stud, targetProgramId);
           }
           continue;
         }
