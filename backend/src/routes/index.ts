@@ -11,6 +11,7 @@ import selectionRoutes from './selection.routes';
 import disbursementRoutes from './disbursement.routes';
 import systemRoutes from './system.routes';
 import reportRoutes from './report.routes';
+import fundReportRoutes from './fund-report.routes';
 
 const router = Router();
 
@@ -37,6 +38,7 @@ router.use('/selections', selectionRoutes);
 
 // TSD Reports (Export and Monthly)
 router.use('/reports', reportRoutes);
+router.use('/fund-reports', fundReportRoutes);
 
 // Disbursement routes
 router.use('/disbursements', disbursementRoutes);
