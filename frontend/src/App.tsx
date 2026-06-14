@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import VerifikasiEmailPage from './pages/VerifikasiEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import BiodataPage from './pages/BiodataPage'
 import PengajuanPage from './pages/PengajuanPage'
@@ -36,6 +37,7 @@ function App() {
         <Route path="/daftar" element={<RegisterPage />} />
         <Route path="/verifikasi-email" element={<VerifikasiEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
       </Route>
 

@@ -251,6 +251,74 @@ class AuthService {
       throw new Error('Access token tidak valid atau sudah kedaluwarsa.');
     }
   }
+
+  /**
+   * Send password reset email
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+    });
+
+    if (error) {
+      throw new Error(`Gagal mengirim email reset password: ${error.message}`);
+    }
+  }
+
+  /**
+   * Reset user password using access token, code, or OTP token_hash
+   */
+  async resetPassword(payload: {
+    token?: string;
+    code?: string;
+    token_hash?: string;
+    password?: string;
+  }): Promise<void> {
+    const { token, code, token_hash, password } = payload;
+
+    if (!password) {
+      throw new Error('Password baru wajib diisi.');
+    }
+
+    if (password.length < 8) {
+      throw new Error('Panjang password minimal harus 8 karakter.');
+    }
+
+    let userId: string | null = null;
+
+    if (token) {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (error || !user) {
+        throw new Error('Token pemulihan tidak valid atau sudah kedaluwarsa.');
+      }
+      userId = user.id;
+    } else if (code) {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error || !data.user) {
+        throw new Error('Kode pemulihan tidak valid atau sudah kedaluwarsa.');
+      }
+      userId = data.user.id;
+    } else if (token_hash) {
+      const { data, error } = await supabaseAdmin.auth.verifyOtp({
+        token_hash,
+        type: 'recovery',
+      });
+      if (error || !data.user) {
+        throw new Error('Token OTP pemulihan tidak valid atau sudah kedaluwarsa.');
+      }
+      userId = data.user.id;
+    } else {
+      throw new Error('Token pemulihan tidak ditemukan.');
+    }
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: password,
+    });
+
+    if (updateError) {
+      throw new Error(`Gagal memperbarui password: ${updateError.message}`);
+    }
+  }
 }
 
 export const authService = new AuthService();

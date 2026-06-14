@@ -6,6 +6,7 @@ import {
   verifyEmail,
   refreshToken,
   forgotPassword,
+  resetPassword,
 } from '../controllers/auth.controller';
 
 const router = Router();
@@ -27,5 +28,8 @@ router.post('/refresh-token', refreshToken);
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', forgotPassword);
+
+// POST /api/auth/reset-password
+router.post('/reset-password', resetPassword);
 
 export default router;

@@ -148,7 +148,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
 /**
  * POST /auth/forgot-password
- * Simulate sending password reset email
+ * Send password reset email via Supabase Auth
  */
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -159,7 +159,35 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    await authService.forgotPassword(email);
+
     sendSuccess(res, null, 'Link pemulihan kata sandi berhasil dikirim ke email Anda.');
+  } catch (error: any) {
+    sendError(res, error.message, 500);
+  }
+};
+
+/**
+ * POST /auth/reset-password
+ * Reset password using verification token/code/hash
+ */
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token, code, token_hash, password } = req.body;
+
+    if (!password) {
+      sendError(res, 'Password baru wajib diisi.', 400);
+      return;
+    }
+
+    if (password.length < 8) {
+      sendError(res, 'Panjang password minimal harus 8 karakter.', 400);
+      return;
+    }
+
+    await authService.resetPassword({ token, code, token_hash, password });
+
+    sendSuccess(res, null, 'Kata sandi berhasil diperbarui. Silakan login kembali.');
   } catch (error: any) {
     sendError(res, error.message, 500);
   }
