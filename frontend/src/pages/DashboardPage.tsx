@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fetchApi } from '../services/api'
 import { getPrograms, getUserApplications, type Application, type ScholarshipProgram } from '../services/scholarship'
+import { getAllBiodata } from '../services/biodata'
 
 interface ApiResponse<T> {
   success: boolean
@@ -24,17 +25,17 @@ function DashboardPage() {
   async function loadDashboard() {
     try {
       setLoading(true)
-      const [biodataRes, apps, progs] = await Promise.all([
-        fetchApi<ApiResponse<{ pribadi: any; alamat: any; orang_tua: any; akademik: any }>>('/biodata'),
+      const [biodataData, apps, progs] = await Promise.all([
+        getAllBiodata(),
         getUserApplications(),
         getPrograms(),
       ])
 
       let p = 0
-      if (biodataRes.data.pribadi) p += 25
-      if (biodataRes.data.alamat) p += 25
-      if (biodataRes.data.orang_tua) p += 25
-      if (biodataRes.data.akademik) p += 25
+      if (biodataData.pribadi) p += 25
+      if (biodataData.alamat) p += 25
+      if (biodataData.orang_tua) p += 25
+      if (biodataData.akademik) p += 25
       setProgress(p)
       setApplications(apps)
       setPrograms(progs)
