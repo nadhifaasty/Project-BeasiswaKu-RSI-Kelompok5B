@@ -64,7 +64,7 @@ export const getEvaluations = async (programId?: string) => {
   for (const program of programs) {
     const { data: apps, error: appError } = await supabaseAdmin
       .from('applications')
-      .select('id, status, ipk, user_id, selection_results(skor_total)')
+      .select('id, user_id, status, ipk, skor_kelayakan, selection_results(skor_total)')
       .eq('program_id', program.id);
 
     if (appError) throw new Error(appError.message);
@@ -92,7 +92,9 @@ export const getEvaluations = async (programId?: string) => {
       total_ipk += Number(app.ipk || 0);
       
       let score: number | null = null;
-      if (app.selection_results) {
+      if (app.skor_kelayakan !== null && app.skor_kelayakan !== undefined) {
+        score = Number(app.skor_kelayakan);
+      } else if (app.selection_results) {
         if (Array.isArray(app.selection_results)) {
           if (app.selection_results.length > 0) {
             score = Number(app.selection_results[0].skor_total);

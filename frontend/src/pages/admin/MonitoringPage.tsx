@@ -21,7 +21,8 @@ interface TrendSemester {
 
 interface MonitoringData {
   kpi: MonitoringKpi
-  top_institusi: TopInstitusi[]
+  top_sma: TopInstitusi[]
+  top_pt: TopInstitusi[]
   trend_semesteran: TrendSemester[]
 }
 
@@ -83,9 +84,7 @@ function MonitoringPage() {
       </div>
     )
   }
-
-  const { kpi, top_institusi, trend_semesteran } = data
-
+  const { kpi, top_sma, top_pt, trend_semesteran } = data
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div>
@@ -113,26 +112,49 @@ function MonitoringPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="text-lg font-bold text-primary mb-4">Top 5 Institusi</h2>
-          {top_institusi.length === 0 ? (
-            <p className="text-gray-400 text-sm">Belum ada data institusi.</p>
-          ) : (
-            <div className="space-y-3">
-              {top_institusi.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-                      {idx + 1}
-                    </span>
-                    <span className="text-sm font-medium text-gray-800">{item.nama}</span>
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-primary mb-4">Top 5 Perguruan Tinggi</h2>
+            {top_pt.length === 0 ? (
+              <p className="text-gray-400 text-sm">Belum ada data institusi.</p>
+            ) : (
+              <div className="space-y-3">
+                {top_pt.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between border-b border-gray-100 pb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      <span className="text-sm font-medium text-gray-800">{item.nama}</span>
+                    </div>
+                    <span className="text-sm font-bold text-primary">{item.jumlah} pendaftar</span>
                   </div>
-                  <span className="text-sm font-bold text-primary">{item.jumlah} pendaftar</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-primary mb-4">Top 5 SMA/SMK/Sederajat</h2>
+            {top_sma.length === 0 ? (
+              <p className="text-gray-400 text-sm">Belum ada data institusi.</p>
+            ) : (
+              <div className="space-y-3">
+                {top_sma.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between border-b border-gray-100 pb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      <span className="text-sm font-medium text-gray-800">{item.nama}</span>
+                    </div>
+                    <span className="text-sm font-bold text-primary">{item.jumlah} pendaftar</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
 
         <Card className="p-6">
           <h2 className="text-lg font-bold text-primary mb-4">Tren Semester</h2>

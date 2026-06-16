@@ -135,32 +135,42 @@ class DashboardService {
       .select('user_id')
       .not('status', 'eq', 'DRAFT');
 
-    const institusiCount: Record<string, number> = {};
+    const smaCount: Record<string, number> = {};
+    const ptCount: Record<string, number> = {};
 
     if (appsData && appsData.length > 0) {
       const userIds = appsData.map((app) => app.user_id).filter(Boolean);
       
       const { data: akademikData } = await supabaseAdmin
         .from('biodata_akademik')
-        .select('user_id, asal_institusi')
+        .select('user_id, asal_institusi, jenjang')
         .in('user_id', userIds);
 
-      const userInstitusiMap: Record<string, string> = {};
+      const userInstitusiMap: Record<string, { institusi: string, jenjang: string }> = {};
       (akademikData || []).forEach((row) => {
-        if (row.user_id && row.asal_institusi) {
-          userInstitusiMap[row.user_id] = row.asal_institusi;
+        if (row.user_id && row.asal_institusi && row.jenjang) {
+          userInstitusiMap[row.user_id] = { institusi: row.asal_institusi, jenjang: row.jenjang };
         }
       });
 
       appsData.forEach((app) => {
-        const institusi = userInstitusiMap[app.user_id];
-        if (institusi) {
-          institusiCount[institusi] = (institusiCount[institusi] || 0) + 1;
+        const data = userInstitusiMap[app.user_id];
+        if (data) {
+          if (data.jenjang.toUpperCase().includes('PERGURUAN')) {
+            ptCount[data.institusi] = (ptCount[data.institusi] || 0) + 1;
+          } else {
+            smaCount[data.institusi] = (smaCount[data.institusi] || 0) + 1;
+          }
         }
       });
     }
 
-    const top5 = Object.entries(institusiCount)
+    const top_pt = Object.entries(ptCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([nama, jumlah]) => ({ nama, jumlah }));
+      
+    const top_sma = Object.entries(smaCount)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .map(([nama, jumlah]) => ({ nama, jumlah }));
@@ -187,7 +197,8 @@ class DashboardService {
         akumulasi_dana_cair: akumulasiDanaCair,
         success_rate: Number(successRate.toFixed(1)),
       },
-      top_institusi: top5,
+      top_sma,
+      top_pt,
       trend_semesteran: Object.entries(semesterTrend).map(([semester, total]) => ({
         semester,
         total,

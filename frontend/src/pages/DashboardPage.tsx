@@ -199,13 +199,24 @@ function DashboardPage() {
                 <p className="text-xs text-gray-400 mb-4">
                   ⏰ Deadline: {new Date(program.deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
-                <Link
-                  to="/pengajuan"
-                  className="flex items-center justify-between bg-primary text-secondary px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-light transition"
-                >
-                  <span>Daftar Sekarang</span>
-                  <span>→</span>
-                </Link>
+                {progress === 100 ? (
+                  <Link
+                    to="/pengajuan"
+                    className="flex items-center justify-between bg-primary text-secondary px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-light transition"
+                  >
+                    <span>Daftar Sekarang</span>
+                    <span>→</span>
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full flex items-center justify-between bg-gray-300 text-gray-500 px-4 py-2.5 rounded-lg text-sm font-medium cursor-not-allowed"
+                    title="Lengkapi biodata 100% terlebih dahulu"
+                  >
+                    <span>Daftar Sekarang</span>
+                    <span>→</span>
+                  </button>
+                )}
               </div>
             ))}
           </div>
