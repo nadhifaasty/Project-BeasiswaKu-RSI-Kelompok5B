@@ -75,8 +75,9 @@ class AuthService {
       throw new Error(`Gagal membuat akun: ${authError.message}`);
     }
 
-    if (!authData.user) {
-      throw new Error('Gagal membuat akun: Data user tidak ditemukan.');
+    if (!authData?.user) {
+      console.error('Create user failed silently:', { authData, authError });
+      throw new Error(`Gagal membuat akun: Data user tidak ditemukan. Info debug: ${JSON.stringify(authData || {})}`);
     }
 
     const userId = authData.user.id;
