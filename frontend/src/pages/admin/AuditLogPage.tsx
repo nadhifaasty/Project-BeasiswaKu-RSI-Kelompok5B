@@ -12,6 +12,7 @@ interface AuditLog {
   ip_address?: string | null
   user_email?: string | null
   user_role?: string | null
+  user_agent?: string | null
   profiles?: {
     nama_lengkap: string
     role: string
@@ -524,13 +525,13 @@ function AuditLogPage() {
             <div>
               <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Aktor</span>
               <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${getAvatarStyle(selectedLog.profiles?.nama_lengkap || selectedLog.user_email)}`}>
-                  {getInitials(selectedLog.profiles?.nama_lengkap || selectedLog.user_email)}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${getAvatarStyle(selectedLog.profiles?.nama_lengkap || selectedLog.user_email || 'System')}`}>
+                  {getInitials(selectedLog.profiles?.nama_lengkap || selectedLog.user_email || 'System')}
                 </div>
                 <div>
                   <div className="font-bold text-gray-800">{selectedLog.profiles?.nama_lengkap || selectedLog.user_email || 'System'}</div>
                   <div className="text-[10px] font-bold text-teal-600 uppercase tracking-wider mt-0.5">
-                    {formatRole(selectedLog.profiles?.role || selectedLog.user_role)}
+                    {formatRole(selectedLog.profiles?.role || selectedLog.user_role || 'system')}
                   </div>
                 </div>
               </div>
