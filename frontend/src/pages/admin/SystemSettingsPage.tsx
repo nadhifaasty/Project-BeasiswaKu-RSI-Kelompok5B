@@ -1,138 +1,118 @@
-import { useState, useEffect } from 'react'
-import { Card, Button, Input } from '../../components'
-import { getSystemSettings, updateSystemSettings, type SystemSettings } from '../../services/system'
+import { useState } from 'react'
+import { Card, Button } from '../../components'
+import { useAuth } from '../../context/AuthContext'
+import { fetchApi } from '../../services/api'
+
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
 
 function SystemSettingsPage() {
-  const [settings, setSettings] = useState<SystemSettings | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const [minIpkSma, setMinIpkSma] = useState('')
-  const [minIpkPt, setMinIpkPt] = useState('')
-  const [maxPenghasilanOrtu, setMaxPenghasilanOrtu] = useState('')
+  async function handleResetPassword() {
+    if (!user?.email) return
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
+    setLoading(true)
+    setMessage(null)
 
-  async function loadSettings() {
     try {
-      setLoading(true)
-      const data = await getSystemSettings()
-      setSettings(data)
-      setMinIpkSma(String(data.min_ipk_sma ?? ''))
-      setMinIpkPt(String(data.min_ipk_pt ?? ''))
-      setMaxPenghasilanOrtu(String(data.max_penghasilan_ortu ?? ''))
+      await fetchApi<ApiResponse<null>>('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: user.email }),
+      })
+
+      setMessage({
+        type: 'success',
+        text: 'Email pemulihan kata sandi telah dikirim! Silakan periksa kotak masuk email Anda.',
+      })
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Gagal memuat konfigurasi sistem.' })
+      setMessage({
+        type: 'error',
+        text: err.message || 'Gagal mengirim email pemulihan kata sandi.',
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-    setMessage(null)
-
-    try {
-      const payload: Record<string, number> = {}
-      if (minIpkSma !== '') payload.min_ipk_sma = Number(minIpkSma)
-      if (minIpkPt !== '') payload.min_ipk_pt = Number(minIpkPt)
-      if (maxPenghasilanOrtu !== '') payload.max_penghasilan_ortu = Number(maxPenghasilanOrtu)
-
-      const result = await updateSystemSettings(payload)
-      setSettings(result)
-      setMessage({ type: 'success', text: 'Konfigurasi sistem berhasil diperbarui.' })
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Gagal menyimpan konfigurasi.' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-pulse max-w-3xl">
-        <div className="h-8 bg-gray-200 rounded w-1/4" />
-        <div className="h-64 bg-gray-200 rounded-2xl" />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* Header */}
       <div>
-        <span className="inline-block bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full mb-2">
-          Super Admin Console
+        <span className="inline-block bg-secondary text-primary text-xs font-medium px-3 py-1 rounded-full mb-2">
+          Pengaturan Akun
         </span>
-        <h1 className="text-3xl font-bold text-primary">Konfigurasi Sistem</h1>
-        <p className="text-gray-500 text-sm mt-1">Atur aturan kelayakan dan parameter sistem beasiswa.</p>
+        <h1 className="text-3xl font-bold text-primary">Pengaturan</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Kelola informasi profil dan keamanan akun BeasiswaKu Anda.
+        </p>
       </div>
 
+      {/* Messages */}
       {message && (
-        <div className={`px-4 py-3 rounded-xl text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+        <div
+          className={`px-4 py-3 rounded-xl text-sm ${
+            message.type === 'success'
+              ? 'bg-green-50 text-green-700 border border-green-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}
+        >
+          {message.type === 'success' ? '✓ ' : '⚠ '}
           {message.text}
         </div>
       )}
 
-      <Card className="p-6">
-        <form onSubmit={handleSave} className="space-y-6">
+      {/* Profile Info */}
+      <Card className="p-6 space-y-6">
+        <div className="flex items-center gap-4 border-b border-gray-100 pb-5">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold">
+            {user?.nama_lengkap?.charAt(0).toUpperCase() || 'S'}
+          </div>
           <div>
-            <h3 className="text-base font-bold text-primary mb-4">Aturan Kelayakan Akademik</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Min. IPK SMA"
-                type="number"
-                step="0.01"
-                min="0"
-                max="4"
-                value={minIpkSma}
-                onChange={(e) => setMinIpkSma(e.target.value)}
-                placeholder="Contoh: 2.50"
-              />
-              <Input
-                label="Min. IPK Perguruan Tinggi"
-                type="number"
-                step="0.01"
-                min="0"
-                max="4"
-                value={minIpkPt}
-                onChange={(e) => setMinIpkPt(e.target.value)}
-                placeholder="Contoh: 2.75"
-              />
-            </div>
+            <h2 className="text-lg font-bold text-primary">{user?.nama_lengkap || 'Super Admin'}</h2>
+            <p className="text-sm text-gray-500 capitalize">Role: {user?.role || 'Super Admin'}</p>
           </div>
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
           <div>
-            <h3 className="text-base font-bold text-primary mb-4">Aturan Kelayakan Ekonomi</h3>
-            <Input
-              label="Maks. Penghasilan Orang Tua (Rp)"
-              type="number"
-              min="0"
-              value={maxPenghasilanOrtu}
-              onChange={(e) => setMaxPenghasilanOrtu(e.target.value)}
-              placeholder="Contoh: 3000000"
-            />
+            <span className="block text-gray-400 font-medium mb-1">NIM / NISN / ID</span>
+            <span className="font-semibold text-primary">{user?.nim_nisn || '-'}</span>
           </div>
-
-          {settings?.updated_by && (
-            <div className="text-xs text-gray-400 border-t border-gray-100 pt-4">
-              Terakhir diperbarui oleh <span className="font-semibold">{settings.updated_by.full_name}</span> pada{' '}
-              {new Date(settings.updated_at).toLocaleString('id-ID')}
-            </div>
-          )}
-
-          <div className="pt-2">
-            <Button type="submit" loading={saving} className="bg-primary text-secondary px-6 py-2.5 font-bold">
-              Simpan Konfigurasi
-            </Button>
+          <div>
+            <span className="block text-gray-400 font-medium mb-1">Alamat Email</span>
+            <span className="font-semibold text-primary">{user?.email || '-'}</span>
           </div>
-        </form>
+        </div>
+      </Card>
+
+      {/* Security & Password */}
+      <Card className="p-6 space-y-5">
+        <div>
+          <h3 className="text-base font-bold text-primary">Keamanan Akun</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Untuk memperbarui kata sandi, kami akan mengirimkan tautan pemulihan kata sandi yang aman ke alamat email terdaftar Anda.
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <Button
+            onClick={handleResetPassword}
+            loading={loading}
+            className="bg-primary text-secondary text-xs px-5 py-2.5 font-bold hover:bg-primary-light"
+          >
+            Minta Reset Kata Sandi
+          </Button>
+        </div>
       </Card>
     </div>
   )
 }
 
 export default SystemSettingsPage
+

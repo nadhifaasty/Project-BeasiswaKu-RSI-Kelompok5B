@@ -102,7 +102,7 @@ class ProgramService {
     // Validasi apakah program masih bisa diedit
     const program = await this.getProgramById(programId);
     
-    if (program.status === 'aktif') {
+    if (program.status === 'aktif' || program.status === 'OPEN') {
       const isNominalChanged = payload.nominal !== undefined && payload.nominal !== Number(program.nominal);
       const isQuotaChanged = payload.quota !== undefined && payload.quota !== program.kuota;
       if (isNominalChanged || isQuotaChanged) {
@@ -114,9 +114,11 @@ class ProgramService {
     if (payload.name !== undefined) updateData.nama = payload.name;
     if (payload.description !== undefined) updateData.deskripsi = payload.description;
     if (payload.nominal !== undefined) updateData.monthly_amount = payload.nominal;
+    if (payload.target_level !== undefined) updateData.target_level = payload.target_level;
     if (payload.quota !== undefined) {
+      const usedQuota = program.kuota - program.sisa_kuota;
       updateData.kuota = payload.quota;
-      updateData.sisa_kuota = payload.quota; // Reset sisa_kuota to match new quota
+      updateData.sisa_kuota = Math.max(0, payload.quota - usedQuota);
     }
     if (payload.deadline !== undefined) updateData.deadline = payload.deadline;
 
