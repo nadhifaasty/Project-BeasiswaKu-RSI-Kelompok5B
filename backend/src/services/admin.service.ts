@@ -10,14 +10,29 @@ export const getAuditLogs = async (params: any) => {
     end_date,
     sort_by = 'created_at',
     order = 'desc',
+    search,
   } = params;
 
-  let query = supabaseAdmin.from('audit_logs').select('*', { count: 'exact' });
+  let query = supabaseAdmin.from('audit_logs').select('*, profiles(nama_lengkap, role)', { count: 'exact' });
 
   if (action_type) query = query.eq('aksi', action_type);
   if (user_id) query = query.eq('user_id', user_id);
   if (start_date) query = query.gte('created_at', start_date);
   if (end_date) query = query.lte('created_at', end_date);
+
+  if (search) {
+    const { data: matchedProfiles } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .ilike('nama_lengkap', `%${search}%`);
+
+    let orFilter = `aksi.ilike.%${search}%,user_email.ilike.%${search}%,user_role.ilike.%${search}%,resource_type.ilike.%${search}%,resource_id.ilike.%${search}%`;
+    if (matchedProfiles && matchedProfiles.length > 0) {
+      const userIdsStr = matchedProfiles.map((p) => p.id).join(',');
+      orFilter += `,user_id.in.(${userIdsStr})`;
+    }
+    query = query.or(orFilter);
+  }
 
   const from = (Number(page) - 1) * Number(per_page);
   const to = from + Number(per_page) - 1;
@@ -49,7 +64,7 @@ export const getEvaluations = async (programId?: string) => {
   for (const program of programs) {
     const { data: apps, error: appError } = await supabaseAdmin
       .from('applications')
-      .select('status, ipk, skor_kelayakan, user_id')
+      .select('id, status, ipk, user_id, selection_results(skor_total)')
       .eq('program_id', program.id);
 
     if (appError) throw new Error(appError.message);
@@ -70,13 +85,25 @@ export const getEvaluations = async (programId?: string) => {
     let skor_count = 0;
     const userIds: string[] = [];
 
-    apps.forEach((app) => {
+    apps.forEach((app: any) => {
       sebaran_status[app.status] = (sebaran_status[app.status] || 0) + 1;
       if (app.status === 'DITERIMA') total_diterima++;
 
       total_ipk += Number(app.ipk || 0);
-      if (app.skor_kelayakan) {
-        total_skor += Number(app.skor_kelayakan);
+      
+      let score: number | null = null;
+      if (app.selection_results) {
+        if (Array.isArray(app.selection_results)) {
+          if (app.selection_results.length > 0) {
+            score = Number(app.selection_results[0].skor_total);
+          }
+        } else {
+          score = Number((app.selection_results as any).skor_total);
+        }
+      }
+
+      if (score !== null && !isNaN(score)) {
+        total_skor += score;
         skor_count++;
       }
       userIds.push(app.user_id);

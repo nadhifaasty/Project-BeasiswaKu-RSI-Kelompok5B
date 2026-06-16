@@ -130,22 +130,35 @@ class DashboardService {
     const totalPenerimaVal = totalPenerima || 0;
     const successRate = totalPendaftarVal > 0 ? (totalPenerimaVal / totalPendaftarVal) * 100 : 0;
 
-    const { data: topInstitusi } = await supabaseAdmin
+    const { data: appsData } = await supabaseAdmin
       .from('applications')
-      .select(`
-        profiles (
-          asal_institusi
-        )
-      `)
+      .select('user_id')
       .not('status', 'eq', 'DRAFT');
 
     const institusiCount: Record<string, number> = {};
-    (topInstitusi || []).forEach((app: any) => {
-      const institusi = app.profiles?.asal_institusi;
-      if (institusi) {
-        institusiCount[institusi] = (institusiCount[institusi] || 0) + 1;
-      }
-    });
+
+    if (appsData && appsData.length > 0) {
+      const userIds = appsData.map((app) => app.user_id).filter(Boolean);
+      
+      const { data: akademikData } = await supabaseAdmin
+        .from('biodata_akademik')
+        .select('user_id, asal_institusi')
+        .in('user_id', userIds);
+
+      const userInstitusiMap: Record<string, string> = {};
+      (akademikData || []).forEach((row) => {
+        if (row.user_id && row.asal_institusi) {
+          userInstitusiMap[row.user_id] = row.asal_institusi;
+        }
+      });
+
+      appsData.forEach((app) => {
+        const institusi = userInstitusiMap[app.user_id];
+        if (institusi) {
+          institusiCount[institusi] = (institusiCount[institusi] || 0) + 1;
+        }
+      });
+    }
 
     const top5 = Object.entries(institusiCount)
       .sort(([, a], [, b]) => b - a)
