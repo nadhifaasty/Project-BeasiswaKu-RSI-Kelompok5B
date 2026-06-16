@@ -138,12 +138,9 @@ function SADashboardPage() {
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <span className="inline-block bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full mb-2 border border-primary/20 tracking-wide uppercase">
-          Super Admin Console
-        </span>
-        <h1 className="text-3xl font-extrabold text-primary tracking-tight">Super Admin Dashboard</h1>
+        <h1 className="text-3xl font-extrabold text-primary tracking-tight">Monitoring Evaluasi</h1>
         <p className="text-gray-500 mt-1">
-          Ikhtisar metrik performansi program beasiswa, penyaluran dana, dan tren pendaftaran sistem.
+          Monitoring performa program beasiswa secara real-time di seluruh wilayah.
         </p>
       </div>
 
