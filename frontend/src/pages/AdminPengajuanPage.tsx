@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from '../components'
+import { Button, Card } from '../components'
 import { fetchApi } from '../services/api'
 import { exportReportExcel } from '../services/report'
 
@@ -115,6 +115,109 @@ function AdminPengajuanPage() {
   const [studentDocuments, setStudentDocuments] = useState<any[] | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [updatingDocId, setUpdatingDocId] = useState<string | null>(null)
+
+  // Weight states (initialized from localStorage with fallback defaults)
+  const [wAkademik, setWAkademik] = useState(() => Number(localStorage.getItem('wAkademik') || 40))
+  const [wEkonomi, setWEkonomi] = useState(() => Number(localStorage.getItem('wEkonomi') || 35))
+  const [wPrestasi, setWPrestasi] = useState(() => Number(localStorage.getItem('wPrestasi') || 15))
+  const [wDokumen, setWDokumen] = useState(() => Number(localStorage.getItem('wDokumen') || 10))
+
+  useEffect(() => {
+    localStorage.setItem('wAkademik', String(wAkademik))
+    localStorage.setItem('wEkonomi', String(wEkonomi))
+    localStorage.setItem('wPrestasi', String(wPrestasi))
+    localStorage.setItem('wDokumen', String(wDokumen))
+  }, [wAkademik, wEkonomi, wPrestasi, wDokumen])
+
+  const totalWeight = wAkademik + wEkonomi + wPrestasi + wDokumen
+  const isWeightValid = totalWeight === 100
+
+  function renderWeightsCard() {
+    return (
+      <Card className="p-6 mb-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+          <div>
+            <h2 className="text-lg font-bold text-primary">Konfigurasi Parameter Bobot Penilaian</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Sesuaikan bobot kriteria untuk kalkulasi skor kelayakan dinamis</p>
+          </div>
+          <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 self-start sm:self-auto">
+            <span className="text-sm font-medium text-gray-600">Akumulasi Bobot:</span>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+              isWeightValid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+            }`}>
+              {totalWeight}% {isWeightValid ? '✓ Valid' : '⚠ Harus 100%'}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Academic Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="font-bold text-slate-700">Akademik (IPK/Nilai)</span>
+              <span className="font-extrabold text-primary">{wAkademik}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={wAkademik}
+              onChange={(e) => setWAkademik(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+          </div>
+
+          {/* Economic Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="font-bold text-slate-700">Kondisi Ekonomi</span>
+              <span className="font-extrabold text-primary">{wEkonomi}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={wEkonomi}
+              onChange={(e) => setWEkonomi(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+          </div>
+
+          {/* Achievement Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="font-bold text-slate-700">Prestasi Non-Akademik</span>
+              <span className="font-extrabold text-primary">{wPrestasi}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={wPrestasi}
+              onChange={(e) => setWPrestasi(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+          </div>
+
+          {/* Document Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="font-bold text-slate-700">Kelengkapan Dokumen</span>
+              <span className="font-extrabold text-primary">{wDokumen}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={wDokumen}
+              onChange={(e) => setWDokumen(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+          </div>
+        </div>
+      </Card>
+    )
+  }
 
   useEffect(() => {
     loadApplications()
@@ -300,10 +403,10 @@ function AdminPengajuanPage() {
 
     // 5. Total Score
     const skorTotal = Math.round(
-      (skorAkademik * 0.40) + 
-      (skorEkonomi * 0.35) + 
-      (skorPrestasi * 0.15) + 
-      (skorDokumen * 0.10)
+      (skorAkademik * (wAkademik / 100)) + 
+      (skorEkonomi * (wEkonomi / 100)) + 
+      (skorPrestasi * (wPrestasi / 100)) + 
+      (skorDokumen * (wDokumen / 100))
     )
 
     let kelayakanLabel = 'TIDAK LAYAK'
@@ -388,6 +491,8 @@ function AdminPengajuanPage() {
             {message.text}
           </div>
         )}
+
+        {renderWeightsCard()}
 
         {/* Detail Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -835,7 +940,7 @@ function AdminPengajuanPage() {
                     {/* Akademik */}
                     <div>
                       <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Akademik (40%)</span>
+                        <span>Akademik ({wAkademik}%)</span>
                         <span className="text-slate-800">{calculatedScores.skorAkademik}%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -845,7 +950,7 @@ function AdminPengajuanPage() {
                     {/* Ekonomi */}
                     <div>
                       <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Ekonomi (35%)</span>
+                        <span>Ekonomi ({wEkonomi}%)</span>
                         <span className="text-slate-800">{calculatedScores.skorEkonomi}%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -855,7 +960,7 @@ function AdminPengajuanPage() {
                     {/* Prestasi */}
                     <div>
                       <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Prestasi (15%)</span>
+                        <span>Prestasi ({wPrestasi}%)</span>
                         <span className="text-slate-800">{calculatedScores.skorPrestasi}%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -865,7 +970,7 @@ function AdminPengajuanPage() {
                     {/* Dokumen */}
                     <div>
                       <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Dokumen (10%)</span>
+                        <span>Dokumen ({wDokumen}%)</span>
                         <span className="text-slate-800">{calculatedScores.skorDokumen}%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -954,6 +1059,8 @@ function AdminPengajuanPage() {
           {message.text}
         </div>
       )}
+
+      {renderWeightsCard()}
 
       {/* ── Search + Filter ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">

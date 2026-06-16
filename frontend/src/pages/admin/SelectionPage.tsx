@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, Button } from '../../components'
 
 import { getPrograms, runSelection, getSelectionResults, finalizeSelection, rollbackSelection, type ScholarshipProgram } from '../../services/scholarship'
@@ -47,11 +48,23 @@ function SelectionPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // Sliders state (default weights: 40%, 35%, 15%, 10%)
-  const [wAkademik, setWAkademik] = useState(40)
-  const [wEkonomi, setWEkonomi] = useState(35)
-  const [wPrestasi, setWPrestasi] = useState(15)
-  const [wDokumen, setWDokumen] = useState(10)
+  // Weights state loaded from localStorage
+  const [wAkademik, setWAkademik] = useState(() => Number(localStorage.getItem('wAkademik') || 40))
+  const [wEkonomi, setWEkonomi] = useState(() => Number(localStorage.getItem('wEkonomi') || 35))
+  const [wPrestasi, setWPrestasi] = useState(() => Number(localStorage.getItem('wPrestasi') || 15))
+  const [wDokumen, setWDokumen] = useState(() => Number(localStorage.getItem('wDokumen') || 10))
+
+  // Sync weights from localStorage when page is focused or mounted
+  useEffect(() => {
+    const handleFocus = () => {
+      setWAkademik(Number(localStorage.getItem('wAkademik') || 40))
+      setWEkonomi(Number(localStorage.getItem('wEkonomi') || 35))
+      setWPrestasi(Number(localStorage.getItem('wPrestasi') || 15))
+      setWDokumen(Number(localStorage.getItem('wDokumen') || 10))
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
 
   // Finalize confirmation modal
   const [showFinalizeModal, setShowFinalizeModal] = useState(false)
@@ -239,84 +252,37 @@ function SelectionPage() {
       {/* Grid: Sliders Controls + Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Left Column: Sliders controls */}
+        {/* Left Column: Parameter Bobot Penilaian Aktif (Read-Only) */}
         <Card className="lg:col-span-2 p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-            <h2 className="text-lg font-bold text-primary">Konfigurasi Parameter Bobot Penilaian</h2>
-            {isFinalized && (
-              <span className="bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded text-xs font-semibold">
-                ✓ Selesai & Terkunci
-              </span>
-            )}
+            <div>
+              <h2 className="text-lg font-bold text-primary">Parameter Bobot Penilaian Aktif</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Parameter penilaian yang diatur dari halaman pengajuan</p>
+            </div>
+            <Link
+              to="/admin/pengajuan"
+              className="text-xs text-primary hover:underline font-bold flex items-center gap-1 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl hover:bg-slate-100/80 transition"
+            >
+              Ubah Parameter ↗
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Academic Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-semibold text-gray-700">Bobot Akademik (IPK/Nilai)</span>
-                <span className="font-bold text-primary">{wAkademik}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={wAkademik}
-                disabled={isFinalized || calculating}
-                onChange={(e) => setWAkademik(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
-              />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+              <p className="text-xs text-gray-500 font-bold mb-1">Akademik</p>
+              <p className="text-3xl font-black text-slate-800">{wAkademik}%</p>
             </div>
-
-            {/* Economic Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-semibold text-gray-700">Bobot Kondisi Ekonomi</span>
-                <span className="font-bold text-primary">{wEkonomi}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={wEkonomi}
-                disabled={isFinalized || calculating}
-                onChange={(e) => setWEkonomi(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
-              />
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+              <p className="text-xs text-gray-500 font-bold mb-1">Ekonomi</p>
+              <p className="text-3xl font-black text-slate-800">{wEkonomi}%</p>
             </div>
-
-            {/* Achievement Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-semibold text-gray-700">Bobot Prestasi Non-Akademik</span>
-                <span className="font-bold text-primary">{wPrestasi}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={wPrestasi}
-                disabled={isFinalized || calculating}
-                onChange={(e) => setWPrestasi(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
-              />
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+              <p className="text-xs text-gray-500 font-bold mb-1">Prestasi</p>
+              <p className="text-3xl font-black text-slate-800">{wPrestasi}%</p>
             </div>
-
-            {/* Document Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-semibold text-gray-700">Bobot Kelengkapan Dokumen</span>
-                <span className="font-bold text-primary">{wDokumen}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={wDokumen}
-                disabled={isFinalized || calculating}
-                onChange={(e) => setWDokumen(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
-              />
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+              <p className="text-xs text-gray-500 font-bold mb-1">Dokumen</p>
+              <p className="text-3xl font-black text-slate-800">{wDokumen}%</p>
             </div>
           </div>
 
