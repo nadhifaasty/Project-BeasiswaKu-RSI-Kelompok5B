@@ -59,17 +59,15 @@ class AuthService {
       }
     }
 
-    // 3. Create user in Supabase Auth using standard signUp (auto sends verification email)
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // 3. Create user in Supabase Auth using admin API
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          nama_lengkap,
-          nim_nisn,
-          nomor_hp,
-        },
-        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifikasi-email`,
+      email_confirm: false,
+      user_metadata: {
+        nama_lengkap,
+        nim_nisn,
+        nomor_hp,
       },
     });
 
@@ -100,6 +98,20 @@ class AuthService {
       // Rollback: delete the auth user if profile insert fails
       await supabaseAdmin.auth.admin.deleteUser(userId);
       throw new Error(`Gagal menyimpan profil: ${profileError.message}`);
+    }
+
+    // 5. Send verification email via Supabase resend API
+    const { error: sendError } = await supabaseAdmin.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifikasi-email`,
+      },
+    });
+
+    if (sendError) {
+      console.error('Warning: Failed to send verification email:', sendError.message);
+      // Non-fatal: user is created, they can request resend via UI
     }
 
     return { userId, email };
