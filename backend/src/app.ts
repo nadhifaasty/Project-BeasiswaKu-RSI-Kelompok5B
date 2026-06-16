@@ -31,7 +31,7 @@ app.use((req, res, next) => {
 // Global API Rate Limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10000, // High limit to prevent 429 errors in local/testing environments
+  max: process.env.RATE_LIMIT_MAX ? Number(process.env.RATE_LIMIT_MAX) : 150, // Default to 150, allow override for testing
   standardHeaders: true,
   legacyHeaders: false,
   message: {

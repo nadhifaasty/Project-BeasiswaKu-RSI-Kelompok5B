@@ -49,6 +49,16 @@ class AuthService {
       throw new Error('NIM/NISN sudah terdaftar. Silakan periksa kembali.');
     }
 
+    // Self-healing: Check if user exists in Supabase Auth but has no profile
+    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (!listError && users) {
+      const existingAuthUser = users.find(u => u.email === email);
+      if (existingAuthUser) {
+        // Since there is no profile (existingEmail was null), delete the auth user so they can sign up fresh
+        await supabaseAdmin.auth.admin.deleteUser(existingAuthUser.id);
+      }
+    }
+
     // 3. Create user in Supabase Auth using standard signUp (auto sends verification email)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
