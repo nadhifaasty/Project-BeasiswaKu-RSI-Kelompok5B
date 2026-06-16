@@ -108,3 +108,13 @@ export const getBankAccountByUserId = async (req: AuthenticatedRequest, res: Res
     sendError(res, error.message, status);
   }
 };
+
+export const getAllDisbursements = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { search } = req.query;
+    const data = await disbursementService.getAllDisbursements(search as string);
+    sendSuccess(res, data, 'Daftar data rekening berhasil diambil.');
+  } catch (error: any) {
+    sendError(res, error.message, 500);
+  }
+};

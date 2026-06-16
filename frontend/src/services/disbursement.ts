@@ -56,8 +56,16 @@ export async function updateDisbursement(id: string, payload: UpdateDisbursement
   return res.data
 }
 
-export async function verifyDisbursement(id: string, is_verified: boolean, catatan?: string): Promise<DisbursementData> {
-  const res = await fetchApi<ApiResponse<DisbursementData>>(`/disbursements/${id}/verify`, {
+export interface VerifyDisbursementResponse {
+  disbursement_id: string
+  is_verified: boolean
+  verified_at?: string | null
+  verified_by?: string
+  catatan?: string
+}
+
+export async function verifyDisbursement(id: string, is_verified: boolean, catatan?: string): Promise<VerifyDisbursementResponse> {
+  const res = await fetchApi<ApiResponse<VerifyDisbursementResponse>>(`/disbursements/${id}/verify`, {
     method: 'PATCH',
     body: JSON.stringify({ is_verified, catatan }),
   })
@@ -66,5 +74,22 @@ export async function verifyDisbursement(id: string, is_verified: boolean, catat
 
 export async function getBankAccountByUserId(userId: string): Promise<DisbursementData | null> {
   const res = await fetchApi<ApiResponse<DisbursementData | null>>(`/system/users/${userId}/bank-account`)
+  return res.data
+}
+
+export interface DisbursementVerificationItem extends DisbursementData {
+  user_id: string
+  catatan?: string
+  user: {
+    id: string
+    nama_lengkap: string
+    nim_nisn: string
+    email: string
+  }
+}
+
+export async function getAllDisbursements(search?: string): Promise<DisbursementVerificationItem[]> {
+  const query = search ? `?search=${encodeURIComponent(search)}` : ''
+  const res = await fetchApi<ApiResponse<DisbursementVerificationItem[]>>(`/disbursements${query}`)
   return res.data
 }

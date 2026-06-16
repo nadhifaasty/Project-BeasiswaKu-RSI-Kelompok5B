@@ -232,6 +232,54 @@ class DisbursementService {
       verified_at: data.verified_at,
     };
   }
+
+  async getAllDisbursements(search?: string) {
+    let query = supabaseAdmin
+      .from('fund_disbursements')
+      .select(`
+        *,
+        profiles!inner (
+          id,
+          nama_lengkap,
+          nim_nisn,
+          email
+        )
+      `);
+
+    if (search && search.trim() !== '') {
+      query = query.ilike('profiles.nama_lengkap', `%${search.trim()}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(`Gagal mengambil data rekening: ${error.message}`);
+
+    return (data || []).map((row: any) => {
+      let plainAccountNo = '';
+      try {
+        plainAccountNo = decrypt(row.nomor_rekening);
+      } catch {
+        plainAccountNo = '';
+      }
+
+      return {
+        disbursement_id: row.id,
+        user_id: row.user_id,
+        bank_name: row.nama_bank,
+        account_no_masked: maskAccountNumber(plainAccountNo),
+        account_holder: row.nama_pemegang,
+        cabang_bank: row.cabang_bank,
+        is_verified: row.is_verified,
+        verified_at: row.verified_at,
+        catatan: row.catatan,
+        user: {
+          id: row.profiles?.id,
+          nama_lengkap: row.profiles?.nama_lengkap,
+          nim_nisn: row.profiles?.nim_nisn,
+          email: row.profiles?.email,
+        }
+      };
+    });
+  }
 }
 
 export const disbursementService = new DisbursementService();

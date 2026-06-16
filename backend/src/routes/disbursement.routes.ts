@@ -6,9 +6,13 @@ import {
   getMyDisbursement,
   updateDisbursement,
   verifyDisbursement,
+  getAllDisbursements,
 } from '../controllers/disbursement.controller';
 
 const router = Router();
+
+// GET /api/disbursements — Admin / SuperAdmin
+router.get('/', verifyJWT, checkRole(['admin', 'super_admin']), getAllDisbursements);
 
 // POST /api/disbursements — Siswa (penerima DITERIMA)
 router.post('/', verifyJWT, createDisbursement);
