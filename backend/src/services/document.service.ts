@@ -16,16 +16,29 @@ class DocumentService {
   /**
    * Get all documents for an application
    */
-  async getByApplication(applicationId: string, userId: string) {
-    // Verify ownership
-    const { data: app } = await supabaseAdmin
-      .from('applications')
-      .select('id')
-      .eq('id', applicationId)
-      .eq('user_id', userId)
-      .single();
+  async getByApplication(applicationId: string, userId: string, userRole?: string) {
+    const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
-    if (!app) throw new Error('Pengajuan tidak ditemukan.');
+    if (!isAdmin) {
+      // Verify ownership for students
+      const { data: app } = await supabaseAdmin
+        .from('applications')
+        .select('id')
+        .eq('id', applicationId)
+        .eq('user_id', userId)
+        .single();
+
+      if (!app) throw new Error('Pengajuan tidak ditemukan.');
+    } else {
+      // Verify application existence for admins
+      const { data: app } = await supabaseAdmin
+        .from('applications')
+        .select('id')
+        .eq('id', applicationId)
+        .single();
+
+      if (!app) throw new Error('Pengajuan tidak ditemukan.');
+    }
 
     const { data, error } = await supabaseAdmin
       .from('application_documents')

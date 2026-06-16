@@ -12,8 +12,9 @@ const VALID_TYPES: DocumentType[] = ['foto', 'ktp', 'kartu_keluarga', 'transkrip
 export const getDocuments = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
+    const userRole = req.user!.role;
     const { applicationId } = req.params;
-    const data = await documentService.getByApplication(applicationId, userId);
+    const data = await documentService.getByApplication(applicationId, userId, userRole);
     sendSuccess(res, data, 'Dokumen berhasil diambil.');
   } catch (error: any) {
     sendError(res, error.message, 404);

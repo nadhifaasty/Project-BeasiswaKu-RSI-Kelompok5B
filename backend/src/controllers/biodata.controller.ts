@@ -7,7 +7,15 @@ import { AuthenticatedRequest } from '../types';
 
 export const getAllBiodata = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.userId;
+    const { id } = req.params;
+    const userId = id === 'me' ? req.user!.userId : id;
+
+    // RBAC check: only the owner or an admin/super_admin can view other users' profiles
+    if (userId !== req.user!.userId && req.user!.role !== 'admin' && req.user!.role !== 'super_admin') {
+      sendError(res, 'Anda tidak memiliki hak akses untuk data ini.', 403);
+      return;
+    }
+
     const data = await biodataService.getAll(userId);
     sendSuccess(res, data, 'Biodata berhasil diambil.');
   } catch (error: any) {
