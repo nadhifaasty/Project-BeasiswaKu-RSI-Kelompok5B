@@ -3,6 +3,15 @@ import { Link } from 'react-router-dom'
 import { fetchApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import SADashboardPage from './admin/SADashboardPage'
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts'
 
 interface AdminApplication {
   id: string
@@ -52,6 +61,37 @@ function AdminDashboardPage() {
       setLoading(false)
     }
   }
+
+  const getTrendData = () => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+    const monthlyCounts: { [key: string]: number } = {}
+    
+    const now = new Date()
+    const monthsToInclude = []
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const label = `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+      monthlyCounts[label] = 0
+      monthsToInclude.push(label)
+    }
+
+    applications.forEach((app) => {
+      if (!app.created_at) return
+      const date = new Date(app.created_at)
+      const label = `${monthNames[date.getMonth()]} ${date.getFullYear()}`
+      if (monthlyCounts[label] !== undefined) {
+        monthlyCounts[label]++
+      }
+    })
+
+    return monthsToInclude.map((month) => ({
+      name: month,
+      Pendaftar: monthlyCounts[month],
+    }))
+  }
+
+  const trendData = getTrendData()
 
   function getStatusBadge(status: string) {
     switch (status) {
@@ -156,8 +196,54 @@ function AdminDashboardPage() {
           <h2 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
             📊 Tren Pengajuan Beasiswa
           </h2>
-          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-            <p>Chart akan ditampilkan di sini (integrasi chart library diperlukan)</p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={trendData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorPendaftar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="name" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  stroke="#94a3b8" 
+                  fontSize={12} 
+                  fontWeight={500}
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  stroke="#94a3b8" 
+                  fontSize={12} 
+                  fontWeight={500}
+                  allowDecimals={false}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#ffffff', 
+                    borderRadius: '12px', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                  labelStyle={{ fontWeight: 'bold', color: '#1e3a8a' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="Pendaftar" 
+                  stroke="#1e3a8a" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorPendaftar)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
