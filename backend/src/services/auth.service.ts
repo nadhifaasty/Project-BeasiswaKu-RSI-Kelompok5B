@@ -32,7 +32,7 @@ class AuthService {
       .from('profiles')
       .select('id')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
     if (existingEmail) {
       throw new Error('Email sudah terdaftar. Silakan gunakan email lain.');
@@ -43,7 +43,7 @@ class AuthService {
       .from('profiles')
       .select('id')
       .eq('nim_nisn', nim_nisn)
-      .single();
+      .maybeSingle();
 
     if (existingNim) {
       throw new Error('NIM/NISN sudah terdaftar. Silakan periksa kembali.');
@@ -175,7 +175,7 @@ class AuthService {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
       throw new Error('Profil pengguna tidak ditemukan.');
