@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { biodataService } from '../services/biodata.service';
 import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
+import { logAudit } from '../services/audit.service';
 
 // ============ GET ALL BIODATA ============
 
@@ -66,6 +67,14 @@ export const upsertPribadi = async (req: AuthenticatedRequest, res: Response): P
       agama,
     });
 
+    // Log the update action in audit_logs
+    await logAudit(req, {
+      aksi: 'UPDATE_BIODATA_PRIBADI',
+      resourceType: 'biodata',
+      resourceId: 'Profil Pengguna',
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Biodata pribadi berhasil disimpan.', 200);
   } catch (error: any) {
     sendError(res, error.message, 500);
@@ -104,6 +113,14 @@ export const upsertAlamat = async (req: AuthenticatedRequest, res: Response): Pr
       kode_pos,
     });
 
+    // Log the update action in audit_logs
+    await logAudit(req, {
+      aksi: 'UPDATE_BIODATA_ALAMAT',
+      resourceType: 'biodata',
+      resourceId: 'Profil Pengguna',
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Biodata alamat berhasil disimpan.', 200);
   } catch (error: any) {
     sendError(res, error.message, 500);
@@ -140,6 +157,14 @@ export const upsertOrangTua = async (req: AuthenticatedRequest, res: Response): 
       ibu_nama,
       ibu_pekerjaan,
       ibu_penghasilan: Number(ibu_penghasilan),
+    });
+
+    // Log the update action in audit_logs
+    await logAudit(req, {
+      aksi: 'UPDATE_BIODATA_ORTU',
+      resourceType: 'biodata',
+      resourceId: 'Profil Pengguna',
+      level: 'INFO'
     });
 
     sendSuccess(res, data, 'Biodata orang tua berhasil disimpan.', 200);
@@ -183,6 +208,14 @@ export const upsertAkademik = async (req: AuthenticatedRequest, res: Response): 
       asal_institusi,
       program_studi,
       ipk_nilai: Number(ipk_nilai),
+    });
+
+    // Log the update action in audit_logs
+    await logAudit(req, {
+      aksi: 'UPDATE_BIODATA_AKADEMIK',
+      resourceType: 'biodata',
+      resourceId: 'Profil Pengguna',
+      level: 'INFO'
     });
 
     sendSuccess(res, data, 'Biodata akademik berhasil disimpan.', 200);

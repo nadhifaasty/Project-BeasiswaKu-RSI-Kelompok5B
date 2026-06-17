@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { selectionService } from '../services/selection.service';
 import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
+import { logAudit, getProgramNameByProgramId } from '../services/audit.service';
 
 export const runSelection = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -28,6 +29,16 @@ export const runSelection = async (req: AuthenticatedRequest, res: Response): Pr
       bobot_prestasi: bobot_prestasi ? Number(bobot_prestasi) : undefined,
       bobot_dokumen: bobot_dokumen ? Number(bobot_dokumen) : undefined,
     });
+
+    // Log calculation action
+    const programName = await getProgramNameByProgramId(programId);
+    await logAudit(req, {
+      aksi: 'HITUNG_SKOR',
+      resourceType: 'selection_results',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Kalkulasi skor kelayakan selesai.');
   } catch (error: any) {
     const status = error.message.includes('Tidak ada pengajuan') ? 400 : 500;
@@ -62,6 +73,16 @@ export const finalizeSelection = async (req: AuthenticatedRequest, res: Response
     }
 
     const data = await selectionService.finalizeSelection(programId, actorId);
+
+    // Log finalization action
+    const programName = await getProgramNameByProgramId(programId);
+    await logAudit(req, {
+      aksi: 'SAHKAN_SELEKSI',
+      resourceType: 'selection_results',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Hasil seleksi berhasil disahkan dan bersifat final.');
   } catch (error: any) {
     sendError(res, error.message, 400);
@@ -79,6 +100,16 @@ export const rollbackSelection = async (req: AuthenticatedRequest, res: Response
     }
 
     const data = await selectionService.rollbackSelection(programId, actorId);
+
+    // Log rollback action
+    const programName = await getProgramNameByProgramId(programId);
+    await logAudit(req, {
+      aksi: 'BATAL_SAH_SELEKSI',
+      resourceType: 'selection_results',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Pengesahan hasil seleksi berhasil dibatalkan.');
   } catch (error: any) {
     sendError(res, error.message, 400);
@@ -107,6 +138,17 @@ export const updateWeights = async (req: AuthenticatedRequest, res: Response): P
       bobot_prestasi: Number(bobot_prestasi),
       bobot_dokumen: Number(bobot_dokumen),
     });
+
+    // Log update weights action
+    const programName = await getProgramNameByProgramId(programId);
+    await logAudit(req, {
+      aksi: 'UPDATE_SELECTION_WEIGHTS',
+      resourceType: 'selection_weights',
+      resourceId: programName,
+      newValues: { bobot_akademik, bobot_ekonomi, bobot_prestasi, bobot_dokumen },
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Bobot seleksi berhasil disimpan.');
   } catch (error: any) {
     sendError(res, error.message, 400);

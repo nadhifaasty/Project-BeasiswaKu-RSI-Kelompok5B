@@ -4,6 +4,7 @@ import { programService } from '../services/program.service';
 import { sendSuccess, sendError } from '../utils';
 import { createProgramSchema, updateProgramSchema, updateProgramStatusSchema } from '../utils/validators';
 import { z } from 'zod';
+import { logAudit, getProgramNameByProgramId } from '../services/audit.service';
 
 export const getPrograms = async (_req: Request, res: Response): Promise<void> => {
   try {
@@ -31,6 +32,15 @@ export const createProgram = async (req: AuthenticatedRequest, res: Response): P
     const parsedData = createProgramSchema.parse(req.body);
 
     const data = await programService.createProgram(adminId, parsedData);
+
+    // Log creation action
+    await logAudit(req, {
+      aksi: `CREATE_PROGRAM: Membuka program beasiswa baru: ${data.nama}`,
+      resourceType: 'scholarship_programs',
+      resourceId: data.nama,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Program beasiswa berhasil dibuat!', 201);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -42,7 +52,7 @@ export const createProgram = async (req: AuthenticatedRequest, res: Response): P
   }
 };
 
-export const updateProgram = async (req: Request, res: Response): Promise<void> => {
+export const updateProgram = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
@@ -56,6 +66,16 @@ export const updateProgram = async (req: Request, res: Response): Promise<void> 
     }
 
     const data = await programService.updateProgram(id, parsedData);
+
+    // Log update action
+    const programName = await getProgramNameByProgramId(id);
+    await logAudit(req, {
+      aksi: `UPDATE_PROGRAM: Memperbarui program beasiswa: ${programName}`,
+      resourceType: 'scholarship_programs',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Program beasiswa berhasil diperbarui.');
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -68,7 +88,7 @@ export const updateProgram = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const updateProgramStatus = async (req: Request, res: Response): Promise<void> => {
+export const updateProgramStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
@@ -76,6 +96,16 @@ export const updateProgramStatus = async (req: Request, res: Response): Promise<
     const parsedData = updateProgramStatusSchema.parse(req.body);
 
     const data = await programService.updateProgramStatus(id, parsedData.status);
+
+    // Log status update action
+    const programName = await getProgramNameByProgramId(id);
+    await logAudit(req, {
+      aksi: `UPDATE_PROGRAM_STATUS: Mengubah status program beasiswa menjadi ${parsedData.status}`,
+      resourceType: 'scholarship_programs',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Status program berhasil diperbarui.');
   } catch (error: any) {
     if (error instanceof z.ZodError) {

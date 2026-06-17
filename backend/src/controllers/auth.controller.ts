@@ -4,6 +4,7 @@ import { redisService } from '../services/redis.service';
 import { supabase, supabaseAdmin } from '../config/supabase';
 import { sendSuccess, sendError } from '../utils';
 import { RegisterPayload, LoginPayload, AuthenticatedRequest } from '../types';
+import { logAudit, logAuditManual } from '../services/audit.service';
 
 /**
  * POST /auth/register
@@ -66,6 +67,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const { tokens, profile } = await authService.login({ email, password });
+
+    // Log the login action in audit_logs
+    await logAuditManual({
+      userId: profile.id,
+      userEmail: profile.email,
+      userRole: profile.role,
+      aksi: 'LOGIN',
+      resourceType: 'auth',
+      resourceId: 'Sistem',
+      ipAddress: req.ip || req.socket.remoteAddress || (req.headers['x-forwarded-for'] as string) || '',
+      userAgent: (req.headers['user-agent'] as string) || '',
+      level: 'INFO'
+    });
 
     sendSuccess(res, {
       accessToken: tokens.accessToken,
@@ -252,14 +266,10 @@ export const logout = async (req: AuthenticatedRequest, res: Response): Promise<
     await supabase.auth.signOut();
 
     // Log the logout action in audit_logs
-    await supabaseAdmin.from('audit_logs').insert({
-      user_id: decoded.userId,
-      user_email: decoded.email,
-      user_role: decoded.role,
+    await logAudit(req, {
       aksi: 'LOGOUT',
-      ip_address: req.ip || req.socket.remoteAddress,
-      user_agent: req.headers['user-agent'] as string || '',
-      session_id: decoded.jti || '',
+      resourceType: 'auth',
+      resourceId: 'Sistem',
       level: 'INFO'
     });
 

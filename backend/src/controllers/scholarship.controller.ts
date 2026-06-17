@@ -4,6 +4,7 @@ import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
 
 import { supabaseAdmin } from '../config/supabase';
+import { logAudit, getProgramNameByApplicationId } from '../services/audit.service';
 
 // ============ APPLICATIONS (User) ============
 
@@ -121,6 +122,16 @@ export const updateApplicationStatus = async (req: AuthenticatedRequest, res: Re
     }
 
     const data = await scholarshipService.updateApplicationStatus(id, status, catatan_admin);
+
+    // Log status update action
+    const programName = await getProgramNameByApplicationId(id);
+    await logAudit(req, {
+      aksi: `UPDATE_APPLICATION_STATUS: Mengubah status pengajuan menjadi ${status}`,
+      resourceType: 'applications',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Status pengajuan berhasil diperbarui.');
   } catch (error: any) {
     sendError(res, error.message, 400);

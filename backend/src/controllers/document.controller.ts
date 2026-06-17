@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { documentService, DocumentType } from '../services/document.service';
 import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
+import { logAudit, getProgramNameByApplicationId } from '../services/audit.service';
 
 const VALID_TYPES: DocumentType[] = ['foto', 'ktp', 'kartu_keluarga', 'transkrip', 'sktm', 'sertifikat_prestasi'];
 
@@ -68,6 +69,16 @@ export const saveDocument = async (req: AuthenticatedRequest, res: Response): Pr
     }
 
     const data = await documentService.saveDocument(userId, { application_id, jenis, file_url });
+
+    // Log upload action
+    const programName = await getProgramNameByApplicationId(application_id);
+    await logAudit(req, {
+      aksi: `UPLOAD_DOCUMENT: Mengunggah dokumen ${jenis}`,
+      resourceType: 'documents',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Dokumen berhasil disimpan.', 201);
   } catch (error: any) {
     sendError(res, error.message, 500);
@@ -89,6 +100,16 @@ export const updateDocumentStatus = async (req: AuthenticatedRequest, res: Respo
     }
 
     const data = await documentService.updateDocumentStatus(id, status);
+
+    // Log verification action
+    const programName = await getProgramNameByApplicationId(data.application_id);
+    await logAudit(req, {
+      aksi: `VERIFIKASI_DOKUMEN: Memverifikasi dokumen ${data.jenis} menjadi ${status}`,
+      resourceType: 'documents',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Status dokumen berhasil diperbarui.');
   } catch (error: any) {
     sendError(res, error.message, 500);

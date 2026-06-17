@@ -88,13 +88,6 @@ class ProgramService {
 
     if (error) throw new Error(`Gagal membuat program: ${error.message}`);
 
-    // Catat ke audit_logs (AC-08)
-    await supabaseAdmin.from('audit_logs').insert({
-      user_id: adminId,
-      aksi: `CREATE_PROGRAM: Membuka program beasiswa baru: ${payload.name}`,
-      level: 'INFO'
-    });
-
     return data;
   }
 

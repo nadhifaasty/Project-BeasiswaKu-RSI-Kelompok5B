@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { fundReportService } from '../services/fund-report.service';
 import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
+import { logAudit, getProgramNameByApplicationId, getProgramNameByReportId } from '../services/audit.service';
 
 export const createReport = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -20,6 +21,15 @@ export const createReport = async (req: AuthenticatedRequest, res: Response): Pr
       jumlah: Number(jumlah),
       keterangan,
       bukti_url,
+    });
+
+    // Log report creation action
+    const programName = await getProgramNameByApplicationId(application_id);
+    await logAudit(req, {
+      aksi: `KIRIM_LAPORAN_DANA: Mengirim laporan dana bulan ${bulan}`,
+      resourceType: 'fund_reports',
+      resourceId: programName,
+      level: 'INFO'
     });
 
     sendSuccess(res, data, 'Laporan penggunaan dana berhasil dikirim.', 201);
@@ -59,6 +69,17 @@ export const updateReportStatus = async (req: AuthenticatedRequest, res: Respons
     }
 
     const data = await fundReportService.updateReportStatus(id, status, catatan_admin);
+
+    // Log verification action
+    const programName = await getProgramNameByReportId(id);
+    const actionLabel = status === 'terverifikasi' ? 'MEMVERIFIKASI' : 'MENOLAK';
+    await logAudit(req, {
+      aksi: `VERIFIKASI_LAPORAN_DANA: ${actionLabel} laporan dana`,
+      resourceType: 'fund_reports',
+      resourceId: programName,
+      level: 'INFO'
+    });
+
     sendSuccess(res, data, 'Status verifikasi laporan dana berhasil diperbarui.');
   } catch (error: any) {
     sendError(res, error.message, 400);
@@ -98,6 +119,15 @@ export const updateReport = async (req: AuthenticatedRequest, res: Response): Pr
       jumlah: Number(jumlah),
       keterangan,
       bukti_url,
+    });
+
+    // Log update action
+    const programName = await getProgramNameByReportId(id);
+    await logAudit(req, {
+      aksi: `UPDATE_LAPORAN_DANA: Memperbarui laporan dana`,
+      resourceType: 'fund_reports',
+      resourceId: programName,
+      level: 'INFO'
     });
 
     sendSuccess(res, data, 'Laporan penggunaan dana berhasil diperbarui.');

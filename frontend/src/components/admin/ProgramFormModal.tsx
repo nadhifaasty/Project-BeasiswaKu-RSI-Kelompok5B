@@ -174,7 +174,7 @@ export function ProgramFormModal({ initialData, onClose, onSuccess }: ProgramFor
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Persyaratan Khusus (JSON Opsional)</label>
+              <label className="block text-sm font-medium text-gray-700">Persyaratan Khusus</label>
               <textarea
                 name="requirements"
                 value={formData.requirements}

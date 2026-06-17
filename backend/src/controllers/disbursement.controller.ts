@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { disbursementService } from '../services/disbursement.service';
 import { sendSuccess, sendError } from '../utils';
 import { AuthenticatedRequest } from '../types';
+import { logAudit, getProgramNameByDisbursementId } from '../services/audit.service';
 
 export const createDisbursement = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -81,6 +82,16 @@ export const verifyDisbursement = async (req: AuthenticatedRequest, res: Respons
     const message = data.is_verified
       ? 'Data rekening telah diverifikasi dan dikunci.'
       : 'Data rekening ditolak. Siswa diminta melengkapi ulang.';
+
+    // Log verification action
+    const programName = await getProgramNameByDisbursementId(id);
+    const actionLabel = is_verified ? 'MEMVERIFIKASI' : 'MENOLAK';
+    await logAudit(req, {
+      aksi: `VERIFIKASI_REKENING: ${actionLabel} data rekening penerima`,
+      resourceType: 'fund_disbursements',
+      resourceId: programName,
+      level: 'INFO'
+    });
 
     sendSuccess(res, data, message);
   } catch (error: any) {

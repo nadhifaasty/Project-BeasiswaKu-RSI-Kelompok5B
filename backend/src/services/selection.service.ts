@@ -211,14 +211,7 @@ class SelectionService {
       throw new Error(`Gagal menyimpan hasil seleksi: ${upsertError.message}`);
     }
 
-    // Record audit log
-    await supabaseAdmin.from('audit_logs').insert({
-      user_id: actorId,
-      aksi: 'HITUNG_SKOR',
-      resource_type: 'selection_results',
-      resource_id: programId,
-      created_at: new Date().toISOString(),
-    });
+
 
     return {
       program_id: programId,
@@ -330,14 +323,7 @@ class SelectionService {
       }
     }
 
-    // Record audit log
-    await supabaseAdmin.from('audit_logs').insert({
-      user_id: actorId,
-      aksi: 'SAHKAN_SELEKSI',
-      resource_type: 'selection_results',
-      resource_id: programId,
-      created_at: disahkan_at,
-    });
+
 
     return {
       success: true,
@@ -399,14 +385,7 @@ class SelectionService {
       }
     }
 
-    // Record audit log
-    await supabaseAdmin.from('audit_logs').insert({
-      user_id: actorId,
-      aksi: 'BATAL_SAH_SELEKSI',
-      resource_type: 'selection_results',
-      resource_id: programId,
-      created_at: new Date().toISOString(),
-    });
+
 
     return {
       success: true,
@@ -450,15 +429,7 @@ class SelectionService {
       throw new Error(`Gagal menyimpan bobot seleksi: ${upsertError.message}`);
     }
 
-    // Record audit log
-    await supabaseAdmin.from('audit_logs').insert({
-      user_id: actorId,
-      aksi: 'UPDATE_SELECTION_WEIGHTS',
-      resource_type: 'selection_weights',
-      resource_id: programId,
-      new_values: weights as any,
-      created_at: new Date().toISOString(),
-    });
+
 
     return {
       program_id: programId,
