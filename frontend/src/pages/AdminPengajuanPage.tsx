@@ -492,8 +492,6 @@ function AdminPengajuanPage() {
           </div>
         )}
 
-        {renderWeightsCard()}
-
         {/* Detail Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Main Info Tabs (2/3 width) */}
@@ -888,100 +886,6 @@ function AdminPengajuanPage() {
 
           {/* Right Side Control Panel (1/3 width) */}
           <div className="space-y-6">
-            {/* Card: Skor Kelayakan */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="font-bold text-slate-800 border-b pb-2 mb-5 flex items-center gap-2">
-                <span className="w-2 h-4 bg-primary rounded-sm inline-block" />
-                Skor Kelayakan
-              </h3>
-
-              {calculatedScores && (
-                <div className="space-y-6">
-                  {/* Dynamic Ring Chart */}
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="relative flex items-center justify-center">
-                      <svg className="w-32 h-32 transform -rotate-90">
-                        <circle
-                          cx="64"
-                          cy="64"
-                          r="52"
-                          stroke="#f1f5f9"
-                          strokeWidth="8"
-                          fill="transparent"
-                        />
-                        <circle
-                          cx="64"
-                          cy="64"
-                          r="52"
-                          stroke={
-                            calculatedScores.skorTotal >= 85 ? '#22c55e' :
-                            calculatedScores.skorTotal >= 70 ? '#eab308' : '#ef4444'
-                          }
-                          strokeWidth="8"
-                          fill="transparent"
-                          strokeDasharray={2 * Math.PI * 52}
-                          strokeDashoffset={2 * Math.PI * 52 * (1 - calculatedScores.skorTotal / 100)}
-                          className="transition-all duration-700 ease-out"
-                        />
-                      </svg>
-                      <div className="absolute flex flex-col items-center justify-center">
-                        <span className="text-3xl font-black text-slate-800 leading-none">{calculatedScores.skorTotal}</span>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase mt-1">Score</span>
-                      </div>
-                    </div>
-                    {/* Eligibility Badge */}
-                    <span className={`mt-4 text-xs font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${calculatedScores.kelayakanColor}`}>
-                      {calculatedScores.kelayakanLabel}
-                    </span>
-                  </div>
-
-                  {/* Sub-Criteria Bar Progress Charts */}
-                  <div className="space-y-3 pt-3 border-t">
-                    {/* Akademik */}
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Akademik ({wAkademik}%)</span>
-                        <span className="text-slate-800">{calculatedScores.skorAkademik}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div className="h-1.5 rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${calculatedScores.skorAkademik}%` }} />
-                      </div>
-                    </div>
-                    {/* Ekonomi */}
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Ekonomi ({wEkonomi}%)</span>
-                        <span className="text-slate-800">{calculatedScores.skorEkonomi}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div className="h-1.5 rounded-full bg-sky-500 transition-all duration-500" style={{ width: `${calculatedScores.skorEkonomi}%` }} />
-                      </div>
-                    </div>
-                    {/* Prestasi */}
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Prestasi ({wPrestasi}%)</span>
-                        <span className="text-slate-800">{calculatedScores.skorPrestasi}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div className="h-1.5 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${calculatedScores.skorPrestasi}%` }} />
-                      </div>
-                    </div>
-                    {/* Dokumen */}
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-                        <span>Dokumen ({wDokumen}%)</span>
-                        <span className="text-slate-800">{calculatedScores.skorDokumen}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div className="h-1.5 rounded-full bg-rose-500 transition-all duration-500" style={{ width: `${calculatedScores.skorDokumen}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Card: Keputusan Verifikasi */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="font-bold text-slate-800 border-b pb-2 mb-4 flex items-center gap-2">
@@ -1059,8 +963,6 @@ function AdminPengajuanPage() {
           {message.text}
         </div>
       )}
-
-      {renderWeightsCard()}
 
       {/* ── Search + Filter ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
