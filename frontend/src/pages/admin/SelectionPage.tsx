@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, Button } from '../../components'
+import { fetchApi } from '../../services/api'
 
 import { getPrograms, runSelection, getSelectionResults, finalizeSelection, rollbackSelection, type ScholarshipProgram } from '../../services/scholarship'
 
@@ -53,6 +54,14 @@ function SelectionPage() {
   const [wEkonomi, setWEkonomi] = useState(() => Number(localStorage.getItem('wEkonomi') || 35))
   const [wPrestasi, setWPrestasi] = useState(() => Number(localStorage.getItem('wPrestasi') || 15))
   const [wDokumen, setWDokumen] = useState(() => Number(localStorage.getItem('wDokumen') || 10))
+
+  // Save weights to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('wAkademik', String(wAkademik))
+    localStorage.setItem('wEkonomi', String(wEkonomi))
+    localStorage.setItem('wPrestasi', String(wPrestasi))
+    localStorage.setItem('wDokumen', String(wDokumen))
+  }, [wAkademik, wEkonomi, wPrestasi, wDokumen])
 
   // Sync weights from localStorage when page is focused or mounted
   useEffect(() => {
@@ -184,6 +193,22 @@ function SelectionPage() {
     }
   }
 
+  async function handleUpdateStudentStatusDirect(applicationId: string, status: string) {
+    if (!selectedProgramId) return
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      await fetchApi(`/applications/${applicationId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      })
+      setSuccessMessage(`Berhasil memperbarui status siswa secara manual.`)
+      await loadResults(selectedProgramId)
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Gagal memperbarui status secara manual.')
+    }
+  }
+
   function getRecommendationBadge(recom: RankingItem['status_rekomendasi']) {
     switch (recom) {
       case 'DITERIMA':
@@ -252,37 +277,88 @@ function SelectionPage() {
       {/* Grid: Sliders Controls + Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Left Column: Parameter Bobot Penilaian Aktif (Read-Only) */}
+        {/* Left Column: Parameter Bobot Penilaian Aktif (Sliders) */}
         <Card className="lg:col-span-2 p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div>
               <h2 className="text-lg font-bold text-primary">Parameter Bobot Penilaian Aktif</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Parameter penilaian yang diatur dari halaman pengajuan</p>
+              <p className="text-xs text-gray-400 mt-0.5">Sesuaikan bobot kriteria untuk kalkulasi skor kelayakan dinamis</p>
             </div>
             <Link
               to="/admin/pengajuan"
               className="text-xs text-primary hover:underline font-bold flex items-center gap-1 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl hover:bg-slate-100/80 transition"
             >
-              Ubah Parameter ↗
+              Daftar Pengajuan ↗
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-              <p className="text-xs text-gray-500 font-bold mb-1">Akademik</p>
-              <p className="text-3xl font-black text-slate-800">{wAkademik}%</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Academic Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="font-bold text-slate-700">Akademik (IPK/Nilai)</span>
+                <span className="font-extrabold text-primary">{wAkademik}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={wAkademik}
+                disabled={isFinalized}
+                onChange={(e) => setWAkademik(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
+              />
             </div>
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-              <p className="text-xs text-gray-500 font-bold mb-1">Ekonomi</p>
-              <p className="text-3xl font-black text-slate-800">{wEkonomi}%</p>
+
+            {/* Economic Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="font-bold text-slate-700">Kondisi Ekonomi</span>
+                <span className="font-extrabold text-primary">{wEkonomi}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={wEkonomi}
+                disabled={isFinalized}
+                onChange={(e) => setWEkonomi(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
+              />
             </div>
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-              <p className="text-xs text-gray-500 font-bold mb-1">Prestasi</p>
-              <p className="text-3xl font-black text-slate-800">{wPrestasi}%</p>
+
+            {/* Achievement Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="font-bold text-slate-700">Prestasi Non-Akademik</span>
+                <span className="font-extrabold text-primary">{wPrestasi}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={wPrestasi}
+                disabled={isFinalized}
+                onChange={(e) => setWPrestasi(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
+              />
             </div>
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-              <p className="text-xs text-gray-500 font-bold mb-1">Dokumen</p>
-              <p className="text-3xl font-black text-slate-800">{wDokumen}%</p>
+
+            {/* Document Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="font-bold text-slate-700">Kelengkapan Dokumen</span>
+                <span className="font-extrabold text-primary">{wDokumen}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={wDokumen}
+                disabled={isFinalized}
+                onChange={(e) => setWDokumen(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
+              />
             </div>
           </div>
 
@@ -393,6 +469,7 @@ function SelectionPage() {
                   <th className="py-3 px-4 text-center">SP</th>
                   <th className="py-3 px-4 text-center">SD</th>
                   <th className="py-3 px-4">Rekomendasi</th>
+                  {!isFinalized && <th className="py-3 px-4 text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
@@ -411,6 +488,28 @@ function SelectionPage() {
                         {item.status_rekomendasi}
                       </span>
                     </td>
+                    {!isFinalized && (
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex gap-1.5 justify-end">
+                          <button
+                            onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITERIMA')}
+                            disabled={item.status_rekomendasi === 'DITERIMA'}
+                            title="Loloskan Utama"
+                            className="px-2.5 py-1 rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
+                          >
+                            🏆 Lolos
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITOLAK')}
+                            disabled={item.status_rekomendasi === 'DITOLAK'}
+                            title="Tolak"
+                            className="px-2.5 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
+                          >
+                            ✗ Tolak
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

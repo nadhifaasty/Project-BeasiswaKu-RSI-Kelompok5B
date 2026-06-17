@@ -274,6 +274,115 @@ class ScholarshipService {
       .single();
 
     if (error) throw new Error(`Gagal mengupdate status: ${error.message}`);
+
+    // Sync with selection results
+    try {
+      if (['DITERIMA', 'CADANGAN', 'DITOLAK'].includes(status)) {
+        const { data: selectionResult } = await supabaseAdmin
+          .from('selection_results')
+          .select('id')
+          .eq('application_id', applicationId)
+          .maybeSingle();
+
+        if (selectionResult) {
+          await supabaseAdmin
+            .from('selection_results')
+            .update({ hasil: status })
+            .eq('application_id', applicationId);
+        } else {
+          // Fetch application data
+          const { data: appData } = await supabaseAdmin
+            .from('applications')
+            .select('program_id, ipk, user_id, esai_motivasi, prestasi_non_akademik')
+            .eq('id', applicationId)
+            .single();
+
+          if (appData) {
+            const userId = appData.user_id;
+            const [acadRes, ortuRes, docsRes] = await Promise.all([
+              supabaseAdmin.from('biodata_akademik').select('ipk_nilai, jenjang').eq('user_id', userId).maybeSingle(),
+              supabaseAdmin.from('biodata_orang_tua').select('ayah_penghasilan, ibu_penghasilan').eq('user_id', userId).maybeSingle(),
+              supabaseAdmin.from('application_documents').select('id').eq('application_id', applicationId).eq('status', 'tervalidasi')
+            ]);
+
+            const acad = acadRes.data;
+            const ortu = ortuRes.data;
+            const docs = docsRes.data;
+
+            const ipk = acad?.ipk_nilai ? Number(acad.ipk_nilai) : Number(appData.ipk || 0);
+            const jenjang = acad?.jenjang || '';
+            const isCollege = jenjang.toLowerCase().includes('perguruan') || jenjang.toUpperCase() === 'PERGURUAN_TINGGI';
+            const skor_akademik = isCollege ? Math.min(Math.max((ipk / 4.0) * 100, 0), 100) : Math.min(Math.max(ipk, 0), 100);
+
+            const totalPenghasilan = Number(ortu?.ayah_penghasilan || 0) + Number(ortu?.ibu_penghasilan || 0);
+            let skor_ekonomi = 20;
+            if (totalPenghasilan <= 1500000) {
+              skor_ekonomi = 100;
+            } else if (totalPenghasilan <= 3000000) {
+              skor_ekonomi = 80;
+            } else if (totalPenghasilan <= 5000000) {
+              skor_ekonomi = 60;
+            } else if (totalPenghasilan <= 7500000) {
+              skor_ekonomi = 40;
+            }
+
+            const prestasiText = appData.prestasi_non_akademik || '';
+            let skor_prestasi = 0;
+            if (prestasiText.trim().length > 0) {
+              const textLower = prestasiText.toLowerCase();
+              if (textLower.includes('nasional')) {
+                skor_prestasi = 100;
+              } else if (textLower.includes('provinsi')) {
+                skor_prestasi = 90;
+              } else if (textLower.includes('kota') || textLower.includes('kabupaten')) {
+                skor_prestasi = 80;
+              } else {
+                skor_prestasi = 70;
+              }
+            }
+
+            const validDocsCount = docs ? docs.length : 0;
+            const skor_dokumen = Math.min((validDocsCount / 5.0) * 100, 100);
+
+            // Get weights for program (or default to 40, 35, 15, 10)
+            const { data: wData } = await supabaseAdmin
+              .from('selection_weights')
+              .select('*')
+              .eq('program_id', appData.program_id)
+              .maybeSingle();
+
+            const WA = (wData?.bobot_akademik !== undefined ? Number(wData.bobot_akademik) : 40) / 100.0;
+            const WE = (wData?.bobot_ekonomi !== undefined ? Number(wData.bobot_ekonomi) : 35) / 100.0;
+            const WP = (wData?.bobot_prestasi !== undefined ? Number(wData.bobot_prestasi) : 15) / 100.0;
+            const WD = (wData?.bobot_dokumen !== undefined ? Number(wData.bobot_dokumen) : 10) / 100.0;
+
+            const skor_total = (skor_akademik * WA) + (skor_ekonomi * WE) + (skor_prestasi * WP) + (skor_dokumen * WD);
+
+            await supabaseAdmin
+              .from('selection_results')
+              .upsert({
+                application_id: applicationId,
+                skor_akademik,
+                skor_ekonomi,
+                skor_prestasi,
+                skor_dokumen,
+                skor_total,
+                hasil: status,
+                created_at: new Date().toISOString()
+              }, { onConflict: 'application_id' });
+          }
+        }
+      } else {
+        // If status is PENDING, TERVERIFIKASI, REVISI, delete from selection_results if exists
+        await supabaseAdmin
+          .from('selection_results')
+          .delete()
+          .eq('application_id', applicationId);
+      }
+    } catch (err) {
+      console.error('Error syncing selection_results in updateApplicationStatus:', err);
+    }
+
     return data;
   }
 

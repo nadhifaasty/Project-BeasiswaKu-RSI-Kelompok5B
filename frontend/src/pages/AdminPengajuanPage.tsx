@@ -915,6 +915,15 @@ function AdminPengajuanPage() {
                     {updating ? 'Sedang Memproses...' : '✓ Setujui Pengajuan'}
                   </button>
 
+                  {/* Loloskan Manual */}
+                  <button
+                    onClick={() => handleUpdateStatusDirect('DITERIMA')}
+                    disabled={updating}
+                    className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {updating ? 'Sedang Memproses...' : '🏆 Loloskan Manual (DITERIMA)'}
+                  </button>
+
                   {/* Request Revision */}
                   <button
                     onClick={() => handleUpdateStatusDirect('REVISI')}
