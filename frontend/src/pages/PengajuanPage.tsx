@@ -593,7 +593,23 @@ function PengajuanPage() {
                   {docState?.status === 'failed' && <p className="text-xs text-red-500 mb-2">{docState.error}</p>}
                   
                   {docState?.status === 'success' ? (
-                    <span className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold">Tersimpan</span>
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold">Tersimpan</span>
+                      {docState.path && (
+                        <a
+                          href={docState.path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 mt-1"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Lihat Dokumen
+                        </a>
+                      )}
+                    </div>
                   ) : docState?.status === 'uploading' ? (
                     <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold animate-pulse">Mengunggah...</span>
                   ) : (
@@ -642,11 +658,25 @@ function PengajuanPage() {
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Status Dokumen</h4>
                 <div className="space-y-2 text-sm">
                   {DOCUMENT_TYPES.map(doc => (
-                    <div key={doc.jenis} className="flex items-center gap-2">
-                      <span className={documents[doc.jenis]?.status === 'success' ? 'text-green-500' : doc.required ? 'text-red-500' : 'text-gray-300'}>
-                        {documents[doc.jenis]?.status === 'success' ? '✅' : doc.required ? '❌' : '⚪'}
-                      </span>
-                      <span className="text-gray-600">{doc.label} {documents[doc.jenis]?.status === 'success' ? 'Berhasil diunggah' : doc.required ? 'Belum diunggah' : '(Opsional)'}</span>
+                    <div key={doc.jenis} className="flex items-center gap-2 justify-between border-b border-gray-50 pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className={documents[doc.jenis]?.status === 'success' ? 'text-green-500' : doc.required ? 'text-red-500' : 'text-gray-300'}>
+                          {documents[doc.jenis]?.status === 'success' ? '✅' : doc.required ? '❌' : '⚪'}
+                        </span>
+                        <span className="text-gray-600">
+                          {doc.label} {documents[doc.jenis]?.status === 'success' ? 'Berhasil diunggah' : doc.required ? 'Belum diunggah' : '(Opsional)'}
+                        </span>
+                      </div>
+                      {documents[doc.jenis]?.status === 'success' && documents[doc.jenis]?.path && (
+                        <a
+                          href={documents[doc.jenis]!.path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline font-semibold"
+                        >
+                          Lihat File ↗
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>
