@@ -46,6 +46,7 @@ export interface ProfileRow {
   email: string;
   role: UserRole;
   biodata_progress: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

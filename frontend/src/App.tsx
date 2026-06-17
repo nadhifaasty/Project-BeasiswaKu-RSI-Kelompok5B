@@ -25,6 +25,7 @@ import EvaluationsPage from './pages/admin/EvaluationsPage'
 import MonitoringPage from './pages/admin/MonitoringPage'
 import SystemSettingsPage from './pages/admin/SystemSettingsPage'
 import DisbursementVerificationPage from './pages/admin/DisbursementVerificationPage'
+import UserManagementPage from './pages/admin/UserManagementPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 function App() {
@@ -69,6 +70,7 @@ function App() {
             <Route path="/admin/pengaturan" element={<SystemSettingsPage />} />
           </Route>
           <Route path="/admin/verifikasi-pencairan" element={<DisbursementVerificationPage />} />
+          <Route path="/admin/users" element={<UserManagementPage />} />
         </Route>
       </Route>
     </Routes>

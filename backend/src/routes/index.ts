@@ -12,6 +12,7 @@ import disbursementRoutes from './disbursement.routes';
 import systemRoutes from './system.routes';
 import reportRoutes from './report.routes';
 import fundReportRoutes from './fund-report.routes';
+import userRoutes from './user.routes';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.use('/auth', authRoutes);
 
 // User & Biodata routes
 router.use('/users', biodataRoutes);
+router.use('/users', userRoutes);
 
 // Scholarship Applications routes
 router.use('/applications', applicationRoutes);

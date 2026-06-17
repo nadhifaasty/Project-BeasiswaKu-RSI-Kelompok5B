@@ -228,6 +228,11 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
       return;
     }
 
+    if (profile.is_active === false) {
+      sendError(res, 'Akun Anda dinonaktifkan oleh administrator.', 401);
+      return;
+    }
+
     sendSuccess(res, {
       id: profile.id,
       nama_lengkap: profile.nama_lengkap,
@@ -236,6 +241,7 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
       nim_nisn: profile.nim_nisn,
       nomor_hp: profile.nomor_hp,
       biodata_progress: profile.biodata_progress,
+      is_active: profile.is_active,
       created_at: profile.created_at,
     }, 'Profil berhasil diambil.');
   } catch (error: any) {

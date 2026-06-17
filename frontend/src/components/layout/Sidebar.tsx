@@ -38,6 +38,15 @@ function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           ),
         },
         {
+          label: 'Manajemen User',
+          path: '/admin/users',
+          icon: (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A12.018 12.018 0 0112 21c-1.2 0-2.342-.176-3.418-.503m10.418-1.37a4.847 4.847 0 00-7.836-3.07m-.786 3.07a11.956 11.956 0 01-3.418-.503M3 19.128A9.337 9.337 0 007.121 20c1.07 0 2.083-.18 3.018-.512m-7.139-1.37a4.125 4.125 0 117.533-2.493M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+        },
+        {
           label: 'Evaluasi Program',
           path: '/admin/evaluasi',
           icon: (
@@ -118,6 +127,15 @@ function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           icon: (
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
+            </svg>
+          ),
+        },
+        {
+          label: 'Manajemen User',
+          path: '/admin/users',
+          icon: (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A12.018 12.018 0 0112 21c-1.2 0-2.342-.176-3.418-.503m10.418-1.37a4.847 4.847 0 00-7.836-3.07m-.786 3.07a11.956 11.956 0 01-3.418-.503M3 19.128A9.337 9.337 0 007.121 20c1.07 0 2.083-.18 3.018-.512m-7.139-1.37a4.125 4.125 0 117.533-2.493M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ),
         },

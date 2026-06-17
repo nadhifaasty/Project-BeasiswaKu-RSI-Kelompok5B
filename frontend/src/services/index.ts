@@ -4,3 +4,5 @@ export * from './scholarship'
 export * from './disbursement'
 export * from './system'
 export * from './report'
+export * from './user'
+

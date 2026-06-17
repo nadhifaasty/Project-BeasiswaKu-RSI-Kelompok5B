@@ -12,6 +12,7 @@ create table if not exists public.profiles (
   email text not null,
   role text not null default 'siswa' check (role in ('siswa', 'admin', 'super_admin')),
   biodata_progress integer not null default 0 check (biodata_progress between 0 and 100),
+  is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -182,6 +182,10 @@ class AuthService {
       throw new Error('Profil pengguna tidak ditemukan.');
     }
 
+    if (profile.is_active === false) {
+      throw new Error('Akun Anda dinonaktifkan oleh administrator.');
+    }
+
     // 5. Generate JWT tokens
     const tokens = this.generateTokens({
       userId: user.id,
