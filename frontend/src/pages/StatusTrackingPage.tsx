@@ -91,6 +91,13 @@ function StatusTrackingPage() {
 
   function getStatusStyle(status: Application['status']) {
     switch (status) {
+      case 'DRAFT':
+        return {
+          bg: 'bg-slate-50 text-slate-800 border-slate-200',
+          badge: 'bg-slate-100 text-slate-800 ring-slate-600/20',
+          text: 'Draf Pengajuan',
+          desc: 'Pengajuan beasiswa Anda saat ini masih tersimpan sebagai draf. Selesaikan pengunggahan berkas dokumen dan kirimkan pengajuan Anda.',
+        }
       case 'PENDING':
         return {
           bg: 'bg-yellow-50 text-yellow-800 border-yellow-200',
@@ -181,10 +188,11 @@ function StatusTrackingPage() {
   const statusInfo = getStatusStyle(app.status)
 
   // Determine stage flags
+  const isDraft = app.status === 'DRAFT'
   const isPending = app.status === 'PENDING'
   const isRevisi = app.status === 'REVISI'
   const isDitolak = app.status === 'DITOLAK'
-  const isVerified = app.status !== 'PENDING' && app.status !== 'REVISI'
+  const isVerified = app.status !== 'PENDING' && app.status !== 'REVISI' && app.status !== 'DRAFT'
   const isFinalized = ['DITERIMA', 'CADANGAN', 'DITOLAK'].includes(app.status)
   const isAccepted = app.status === 'DITERIMA'
 
@@ -266,23 +274,39 @@ function StatusTrackingPage() {
               
               {/* Step 1: Pendaftaran Diajukan */}
               <div className="relative">
-                <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xs ring-4 ring-white shadow-sm">
-                  ✓
-                </span>
+                {isDraft ? (
+                  <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xs ring-4 ring-white animate-pulse">
+                    1
+                  </span>
+                ) : (
+                  <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xs ring-4 ring-white shadow-sm">
+                    ✓
+                  </span>
+                )}
                 <div>
-                  <h3 className="font-semibold text-gray-900">Pendaftaran Berhasil Dikirim</h3>
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    Pendaftaran Berhasil Dikirim
+                    {isDraft && <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Draf</span>}
+                  </h3>
                   <p className="text-xs text-gray-500">
-                    Diajukan pada {new Date(app.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}
+                    {isDraft ? 'Belum dikirim' : `Diajukan pada ${new Date(app.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}`}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    Formulir beserta esai motivasi telah lengkap masuk ke database BeasiswaKu.
+                    {isDraft 
+                      ? 'Lengkapi semua formulir dan unggah dokumen Anda agar dapat dikirim ke tim admin.'
+                      : 'Formulir beserta esai motivasi telah lengkap masuk ke database BeasiswaKu.'
+                    }
                   </p>
                 </div>
               </div>
 
               {/* Step 2: Verifikasi Dokumen */}
               <div className="relative">
-                {isPending ? (
+                {isDraft ? (
+                  <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-xs ring-4 ring-white">
+                    2
+                  </span>
+                ) : isPending ? (
                   <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xs ring-4 ring-white animate-pulse">
                     2
                   </span>
@@ -443,6 +467,15 @@ function StatusTrackingPage() {
           {/* Contextual Action Buttons */}
           <div className="space-y-3">
             
+            {/* If DRAFT, provide a link to continue application wizard */}
+            {isDraft && (
+              <Link to={`/pengajuan?draftId=${app.id}`} className="block w-full">
+                <Button variant="primary" className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white shadow animate-pulse">
+                  Lanjutkan Pengajuan
+                </Button>
+              </Link>
+            )}
+
             {/* If REVISI, provide a link to documents page */}
             {isRevisi && (
               <Link to="/dokumen" className="block w-full">

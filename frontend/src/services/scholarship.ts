@@ -22,7 +22,8 @@ export interface Application {
   ipk: number
   esai_motivasi: string
   prestasi_non_akademik: string | null
-  status: 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
+  data_akademik: any | null
+  status: 'DRAFT' | 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
   skor_kelayakan: number | null
   catatan_admin: string | null
   created_at: string

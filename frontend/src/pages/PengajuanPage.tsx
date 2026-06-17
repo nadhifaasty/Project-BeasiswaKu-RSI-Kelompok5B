@@ -12,6 +12,12 @@ import {
 import { getBiodataAkademik, getBiodataStatus } from '../services/biodata'
 import { fetchApi } from '../services/api'
 
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
+
 // ============ TYPES ============
 type DocumentType = 'foto' | 'ktp' | 'kartu_keluarga' | 'transkrip' | 'sktm' | 'sertifikat_prestasi'
 
@@ -91,6 +97,67 @@ function PengajuanPage() {
       if (akad) {
         setIpk(String(akad.ipk_nilai))
         setJenjang(akad.jenjang)
+      }
+
+      // Check if continuing draft application
+      const queryParams = new URLSearchParams(window.location.search)
+      const draftId = queryParams.get('draftId')
+      if (draftId && apps) {
+        const draftApp = apps.find((a: any) => a.id === draftId)
+        if (draftApp && draftApp.status === 'DRAFT') {
+          setApplicationId(draftApp.id)
+          
+          const prog = progs.find((p: any) => p.id === draftApp.program_id)
+          if (prog) setSelectedProgram(prog)
+          
+          setIpk(String(draftApp.ipk))
+          
+          try {
+            const dataAkad = typeof draftApp.data_akademik === 'string' 
+              ? JSON.parse(draftApp.data_akademik) 
+              : draftApp.data_akademik
+            if (dataAkad) {
+              setPeringkatKelas(dataAkad.peringkat_kelas || '')
+              setRiwayatPrestasiAkademik(dataAkad.riwayat_prestasi_akademik || '')
+            }
+          } catch (e) {
+            console.error("Failed to parse data_akademik:", e)
+          }
+
+          try {
+            const prest = typeof draftApp.prestasi_non_akademik === 'string'
+              ? JSON.parse(draftApp.prestasi_non_akademik)
+              : draftApp.prestasi_non_akademik
+            if (Array.isArray(prest)) {
+              setPrestasiNonAkademik(prest)
+            }
+          } catch (e) {
+            console.error("Failed to parse prestasi_non_akademik:", e)
+          }
+
+          const esaiRaw = draftApp.esai_motivasi || ''
+          const parts = esaiRaw.split('\n\nRENCANA PASCA PENERIMAAN:\n')
+          const e1 = parts[0]?.replace('ESAI MOTIVASI:\n', '') || ''
+          const e2 = parts[1] || ''
+          setEssay1(e1)
+          setEssay2(e2)
+
+          // Load documents for this draft
+          const docsRes = await fetchApi<ApiResponse<any[]>>(`/documents/${draftId}`)
+          if (docsRes.data) {
+            const docsMap: Partial<Record<DocumentType, DocumentState>> = {}
+            docsRes.data.forEach((d: any) => {
+              docsMap[d.jenis as DocumentType] = {
+                file: null as any,
+                status: 'success',
+                path: d.file_url
+              }
+            })
+            setDocuments(docsMap)
+          }
+
+          setCurrentStep(3)
+        }
       }
     } catch {
       setMessage({ type: 'error', text: 'Gagal memuat data.' })
