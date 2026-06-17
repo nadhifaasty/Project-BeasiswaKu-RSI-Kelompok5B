@@ -9,6 +9,7 @@ import {
   getAllReports,
   updateReportStatus,
   getReceiptUploadUrl,
+  updateReport,
 } from '../controllers/fund-report.controller';
 
 const router = Router();
@@ -34,6 +35,9 @@ router.post('/monthly/upload-url', verifyJWT, checkRole(['siswa']), getReceiptUp
 
 // POST /api/v1/reports/monthly
 router.post('/monthly', verifyJWT, checkRole(['siswa']), createReport);
+
+// PUT /api/v1/reports/monthly/{id}
+router.put('/monthly/:id', verifyJWT, checkRole(['siswa']), updateReport);
 
 // GET /api/v1/reports/monthly/{userId}
 router.get('/monthly/:userId', verifyJWT, getUserReports);

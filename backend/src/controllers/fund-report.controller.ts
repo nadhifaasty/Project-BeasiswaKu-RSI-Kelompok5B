@@ -81,3 +81,27 @@ export const getReceiptUploadUrl = async (req: AuthenticatedRequest, res: Respon
     sendError(res, error.message, 500);
   }
 };
+
+export const updateReport = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { id } = req.params;
+    const { kategori, jumlah, keterangan, bukti_url } = req.body;
+
+    if (!kategori || jumlah === undefined || !keterangan) {
+      sendError(res, 'Kategori, jumlah, dan keterangan wajib diisi.', 400);
+      return;
+    }
+
+    const data = await fundReportService.updateReport(userId, id, {
+      kategori,
+      jumlah: Number(jumlah),
+      keterangan,
+      bukti_url,
+    });
+
+    sendSuccess(res, data, 'Laporan penggunaan dana berhasil diperbarui.');
+  } catch (error: any) {
+    sendError(res, error.message, 400);
+  }
+};

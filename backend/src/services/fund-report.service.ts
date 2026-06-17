@@ -205,6 +205,51 @@ class FundReportService {
       publicUrl: publicData.publicUrl,
     };
   }
+
+  /**
+   * Update/revise an existing fund report (Siswa)
+   */
+  async updateReport(userId: string, reportId: string, payload: Partial<CreateReportPayload>) {
+    const { kategori, jumlah, keterangan, bukti_url } = payload;
+
+    // 1. Fetch existing report and check ownership and status
+    const { data: existing, error: fetchErr } = await supabaseAdmin
+      .from('fund_reports')
+      .select('status, user_id')
+      .eq('id', reportId)
+      .single();
+
+    if (fetchErr || !existing) {
+      throw new Error('Laporan dana tidak ditemukan.');
+    }
+
+    if (existing.user_id !== userId) {
+      throw new Error('Anda tidak memiliki akses untuk mengubah laporan ini.');
+    }
+
+    // Only allow updating if status is 'ditolak' (needs revision)
+    if (existing.status !== 'ditolak') {
+      throw new Error('Hanya laporan yang berstatus ditolak/butuh revisi yang dapat diperbarui.');
+    }
+
+    // 2. Update the report and set status back to 'dikirim' for admin re-verification
+    const { data, error } = await supabaseAdmin
+      .from('fund_reports')
+      .update({
+        kategori,
+        jumlah,
+        keterangan,
+        bukti_url: bukti_url || null,
+        status: 'dikirim', // set back to dikirim (submitted)
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reportId)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Gagal memperbarui laporan: ${error.message}`);
+    return data;
+  }
 }
 
 export const fundReportService = new FundReportService();

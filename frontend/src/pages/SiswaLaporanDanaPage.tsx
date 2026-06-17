@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, Button, Input } from '../components'
 import { fetchApi } from '../services/api'
 import { getUserApplications, type Application } from '../services/scholarship'
-import { getMonthlyReports, submitMonthlyReport, getReceiptUploadUrl } from '../services/report'
+import { getMonthlyReports, submitMonthlyReport, getReceiptUploadUrl, updateMonthlyReport } from '../services/report'
 import { useAuth } from '../context/AuthContext'
 
 interface FundReportItem {
@@ -39,6 +39,7 @@ function SiswaLaporanDanaPage() {
   const [jumlah, setJumlah] = useState('')
   const [keterangan, setKeterangan] = useState('')
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [editingReport, setEditingReport] = useState<FundReportItem | null>(null)
 
   // Find accepted application
   const acceptedApp = applications.find((a) => a.status === 'DITERIMA')
@@ -80,7 +81,7 @@ function SiswaLaporanDanaPage() {
     setSuccessMessage(null)
 
     try {
-      let uploadUrl = ''
+      let uploadUrl = editingReport ? (editingReport.bukti_url || '') : ''
       if (receiptFile) {
         // 1. Get signed upload URL and public URL from backend
         const uploadUrlRes = await getReceiptUploadUrl(acceptedApp.id, receiptFile.name)
@@ -102,16 +103,29 @@ function SiswaLaporanDanaPage() {
         uploadUrl = publicUrl
       }
 
-      await submitMonthlyReport({
-        application_id: acceptedApp.id,
-        bulan,
-        kategori,
-        jumlah: Number(jumlah),
-        keterangan,
-        bukti_url: uploadUrl || undefined,
-      })
+      if (editingReport) {
+        await updateMonthlyReport(editingReport.id, {
+          application_id: acceptedApp.id,
+          bulan,
+          kategori,
+          jumlah: Number(jumlah),
+          keterangan,
+          bukti_url: uploadUrl || undefined,
+        })
+        setSuccessMessage('Laporan penggunaan dana berhasil diperbarui!')
+        setEditingReport(null)
+      } else {
+        await submitMonthlyReport({
+          application_id: acceptedApp.id,
+          bulan,
+          kategori,
+          jumlah: Number(jumlah),
+          keterangan,
+          bukti_url: uploadUrl || undefined,
+        })
+        setSuccessMessage('Laporan penggunaan dana berhasil dikirim!')
+      }
 
-      setSuccessMessage('Laporan penggunaan dana berhasil dikirim!')
       // Reset form
       setBulan('')
       setKategori('')
@@ -120,10 +134,32 @@ function SiswaLaporanDanaPage() {
       setReceiptFile(null)
       await loadData()
     } catch (err: any) {
-      setErrorMessage(err.message || 'Gagal mengirimkan laporan dana.')
+      setErrorMessage(err.message || 'Gagal memproses laporan dana.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleStartEdit(report: FundReportItem) {
+    setEditingReport(report)
+    setBulan(report.bulan)
+    setKategori(report.kategori)
+    setJumlah(String(report.jumlah))
+    setKeterangan(report.keterangan)
+    setReceiptFile(null)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+  }
+
+  function handleCancelEdit() {
+    setEditingReport(null)
+    setBulan('')
+    setKategori('')
+    setJumlah('')
+    setKeterangan('')
+    setReceiptFile(null)
+    setErrorMessage(null)
+    setSuccessMessage(null)
   }
 
   function getStatusStyle(status: FundReportItem['status']) {
@@ -207,9 +243,9 @@ function SiswaLaporanDanaPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         
         {/* Form Card */}
-        <Card className="md:col-span-1 p-5 h-fit">
+        <Card className="md:col-span-1 p-5 h-fit bg-white border border-gray-150 shadow-sm">
           <h2 className="text-base font-bold text-primary border-b border-gray-100 pb-3 mb-4">
-            Kirim Laporan Bulanan
+            {editingReport ? 'Revisi Laporan Bulanan' : 'Kirim Laporan Bulanan'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -219,8 +255,9 @@ function SiswaLaporanDanaPage() {
               <select
                 value={bulan}
                 onChange={(e) => setBulan(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-primary font-medium focus:ring-2 focus:ring-accent bg-white"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-primary font-medium focus:ring-2 focus:ring-accent bg-white disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-250 disabled:cursor-not-allowed"
                 required
+                disabled={editingReport !== null}
               >
                 <option value="">Pilih Bulan</option>
                 <option value="Januari">Januari</option>
@@ -288,13 +325,30 @@ function SiswaLaporanDanaPage() {
                 accept="image/*,application/pdf"
                 onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                 className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/5 file:text-primary hover:file:bg-primary/10 file:cursor-pointer"
-                required
+                required={editingReport === null}
               />
+              {editingReport?.bukti_url && (
+                <p className="text-[11px] text-emerald-600 mt-1.5 font-medium">
+                  ✓ Berkas kuitansi sudah terunggah. Pilih file baru jika ingin menggantinya.
+                </p>
+              )}
             </div>
 
-            <Button type="submit" loading={submitting} className="w-full justify-center mt-2">
-              Kirim Laporan
-            </Button>
+            <div className="flex gap-2 pt-2">
+              {editingReport && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  className="flex-1 justify-center text-xs"
+                >
+                  Batal
+                </Button>
+              )}
+              <Button type="submit" loading={submitting} className="flex-1 justify-center text-xs">
+                {editingReport ? 'Simpan Revisi' : 'Kirim Laporan'}
+              </Button>
+            </div>
           </form>
         </Card>
 
@@ -321,10 +375,19 @@ function SiswaLaporanDanaPage() {
                     </div>
 
                     {report.status === 'ditolak' && (
-                      <div className="sm:text-right">
-                        <span className="inline-block bg-orange-50 text-orange-700 text-xs border border-orange-200 px-3 py-1.5 rounded-lg max-w-[200px] leading-relaxed">
+                      <div className="flex flex-col sm:items-end gap-2 text-right">
+                        <span className="inline-block bg-orange-50 text-orange-700 text-xs border border-orange-200 px-3 py-1.5 rounded-lg max-w-[200px] leading-relaxed text-left sm:text-right">
                           Revisi diperlukan. Ubah laporan ini untuk mengunggah ulang.
                         </span>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => handleStartEdit(report)}
+                          className="text-xs px-2.5 py-1 w-fit font-semibold"
+                          disabled={editingReport?.id === report.id}
+                        >
+                          {editingReport?.id === report.id ? 'Sedang Direvisi...' : 'Ubah Laporan'}
+                        </Button>
                       </div>
                     )}
                   </div>

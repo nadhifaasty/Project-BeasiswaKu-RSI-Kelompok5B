@@ -89,3 +89,11 @@ export async function getReceiptUploadUrl(applicationId: string, fileName: strin
   })
   return res.data
 }
+
+export async function updateMonthlyReport(id: string, payload: MonthlyReportPayload): Promise<any> {
+  const res = await fetchApi<ApiResponse<any>>(`/reports/monthly/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  })
+  return res.data
+}
