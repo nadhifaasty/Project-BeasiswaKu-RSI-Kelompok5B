@@ -16,6 +16,7 @@ interface RankingItem {
   skor_prestasi: number
   skor_dokumen: number
   status_rekomendasi: 'DITERIMA' | 'CADANGAN' | 'DITOLAK'
+  application_status: string
 }
 
 interface SelectionResultsResponse {
@@ -497,7 +498,7 @@ function SelectionPage() {
                         <div className="inline-flex gap-1.5 justify-end">
                           <button
                             onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITERIMA')}
-                            disabled={item.status_rekomendasi === 'DITERIMA' || updatingAppId === item.application_id}
+                            disabled={item.application_status === 'DITERIMA' || updatingAppId === item.application_id}
                             title="Loloskan Utama"
                             className="px-2.5 py-1 rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
                           >
@@ -505,7 +506,7 @@ function SelectionPage() {
                           </button>
                           <button
                             onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITOLAK')}
-                            disabled={item.status_rekomendasi === 'DITOLAK' || updatingAppId === item.application_id}
+                            disabled={item.application_status === 'DITOLAK' || updatingAppId === item.application_id}
                             title="Tolak"
                             className="px-2.5 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
                           >

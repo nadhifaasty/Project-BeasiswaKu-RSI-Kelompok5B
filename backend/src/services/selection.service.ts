@@ -11,6 +11,7 @@ export interface SelectionRankItem {
   skor_prestasi: number;
   skor_dokumen: number;
   status_rekomendasi: 'DITERIMA' | 'CADANGAN' | 'DITOLAK';
+  application_status: string;
 }
 
 export interface SelectionWeights {
@@ -186,6 +187,7 @@ class SelectionService {
         skor_prestasi: item.skor_prestasi,
         skor_dokumen: item.skor_dokumen,
         status_rekomendasi,
+        application_status: 'TERVERIFIKASI',
       });
 
       dbPayloads.push({
@@ -239,6 +241,7 @@ class SelectionService {
           id,
           nomor_referensi,
           program_id,
+          status,
           profiles (
             nama_lengkap,
             nim_nisn
@@ -266,6 +269,7 @@ class SelectionService {
       skor_prestasi: Number(r.skor_prestasi),
       skor_dokumen: Number(r.skor_dokumen),
       status_rekomendasi: r.hasil as 'DITERIMA' | 'CADANGAN' | 'DITOLAK',
+      application_status: (r.applications as any)?.status || 'TERVERIFIKASI',
       disahkan_at: r.disahkan_at,
     }));
 
