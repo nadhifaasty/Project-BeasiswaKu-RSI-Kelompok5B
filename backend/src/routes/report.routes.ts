@@ -8,6 +8,7 @@ import {
   getUserReports,
   getAllReports,
   updateReportStatus,
+  getReceiptUploadUrl,
 } from '../controllers/fund-report.controller';
 
 const router = Router();
@@ -28,6 +29,9 @@ router.get('/export', verifyJWT, checkRole(['admin', 'super_admin']), exportExce
 // ==========================================
 
 // Siswa endpoints
+// POST /api/v1/reports/monthly/upload-url
+router.post('/monthly/upload-url', verifyJWT, checkRole(['siswa']), getReceiptUploadUrl);
+
 // POST /api/v1/reports/monthly
 router.post('/monthly', verifyJWT, checkRole(['siswa']), createReport);
 

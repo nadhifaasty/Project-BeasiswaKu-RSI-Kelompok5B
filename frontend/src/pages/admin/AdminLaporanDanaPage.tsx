@@ -45,6 +45,14 @@ function AdminLaporanDanaPage() {
   const [reviewNotes, setReviewNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  function resolveBuktiUrl(url: string | null) {
+    if (!url) return ''
+    if (url.includes('storage.beasiswaku.com')) {
+      return '/placeholder-receipt.html'
+    }
+    return url
+  }
+
   useEffect(() => {
     loadReports()
   }, [filterStatus])
@@ -275,7 +283,7 @@ function AdminLaporanDanaPage() {
                 <div className="border border-gray-200 rounded-lg p-3 bg-white flex items-center justify-between text-xs">
                   <span className="font-medium text-gray-600 truncate max-w-[240px]">{selectedReport.bukti_url}</span>
                   <a
-                    href={selectedReport.bukti_url}
+                    href={resolveBuktiUrl(selectedReport.bukti_url)}
                     target="_blank"
                     rel="noreferrer"
                     className="text-accent font-semibold hover:underline"

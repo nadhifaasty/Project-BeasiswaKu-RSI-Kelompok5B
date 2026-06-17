@@ -64,3 +64,20 @@ export const updateReportStatus = async (req: AuthenticatedRequest, res: Respons
     sendError(res, error.message, 400);
   }
 };
+
+export const getReceiptUploadUrl = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { application_id, file_name } = req.body;
+
+    if (!application_id || !file_name) {
+      sendError(res, 'application_id dan file_name wajib diisi.', 400);
+      return;
+    }
+
+    const data = await fundReportService.getReceiptUploadUrl(userId, application_id, file_name);
+    sendSuccess(res, data, 'Upload URL kuitansi berhasil dibuat.');
+  } catch (error: any) {
+    sendError(res, error.message, 500);
+  }
+};

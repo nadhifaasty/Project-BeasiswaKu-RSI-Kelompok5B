@@ -150,6 +150,61 @@ class FundReportService {
     if (error) throw new Error(`Gagal memverifikasi laporan: ${error.message}`);
     return data;
   }
+
+  /**
+   * Generate signed upload URL for payment proof (Siswa)
+   */
+  async getReceiptUploadUrl(userId: string, applicationId: string, fileName: string) {
+    // 1. Verify application ownership and accepted status
+    const { data: app, error: appError } = await supabaseAdmin
+      .from('applications')
+      .select('id, status')
+      .eq('id', applicationId)
+      .eq('user_id', userId)
+      .single();
+
+    if (appError || !app) {
+      throw new Error('Pengajuan tidak ditemukan.');
+    }
+
+    if (app.status !== 'DITERIMA') {
+      throw new Error('Hanya penerima beasiswa aktif yang dapat mengunggah bukti pembayaran.');
+    }
+
+    const ext = fileName.split('.').pop() || 'jpg';
+    const path = `${userId}/${applicationId}/receipts/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+
+    // Auto-create/ensure documents bucket exists
+    try {
+      const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+      const bucket = buckets?.find(b => b.name === 'documents');
+      if (!bucket) {
+        await supabaseAdmin.storage.createBucket('documents', {
+          public: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+        });
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Warning: failed to ensure documents bucket configuration:', err.message);
+    }
+
+    const { data, error } = await supabaseAdmin.storage
+      .from('documents')
+      .createSignedUploadUrl(path);
+
+    if (error) throw new Error(`Gagal membuat upload URL: ${error.message}`);
+
+    const { data: publicData } = supabaseAdmin.storage
+      .from('documents')
+      .getPublicUrl(path);
+
+    return {
+      signedUrl: data.signedUrl,
+      path,
+      token: data.token,
+      publicUrl: publicData.publicUrl,
+    };
+  }
 }
 
 export const fundReportService = new FundReportService();

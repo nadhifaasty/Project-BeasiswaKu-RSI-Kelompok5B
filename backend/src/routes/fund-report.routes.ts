@@ -6,11 +6,13 @@ import {
   getUserReports,
   getAllReports,
   updateReportStatus,
+  getReceiptUploadUrl,
 } from '../controllers/fund-report.controller';
 
 const router = Router();
 
 // Siswa endpoints
+router.post('/upload-url', verifyJWT, checkRole(['siswa']), getReceiptUploadUrl);
 router.post('/', verifyJWT, createReport);
 router.get('/', verifyJWT, getUserReports);
 

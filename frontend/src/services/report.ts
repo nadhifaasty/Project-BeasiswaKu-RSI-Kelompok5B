@@ -78,3 +78,14 @@ export async function getProgramReports(id?: string): Promise<any> {
   const res = await fetchApi<ApiResponse<any>>(url)
   return res.data || res
 }
+
+export async function getReceiptUploadUrl(applicationId: string, fileName: string): Promise<any> {
+  const res = await fetchApi<ApiResponse<any>>('/reports/monthly/upload-url', {
+    method: 'POST',
+    body: JSON.stringify({
+      application_id: applicationId,
+      file_name: fileName
+    })
+  })
+  return res.data
+}

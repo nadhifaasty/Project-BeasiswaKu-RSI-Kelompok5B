@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, Button, Input } from '../components'
 import { fetchApi } from '../services/api'
 import { getUserApplications, type Application } from '../services/scholarship'
-import { getMonthlyReports, submitMonthlyReport } from '../services/report'
+import { getMonthlyReports, submitMonthlyReport, getReceiptUploadUrl } from '../services/report'
 import { useAuth } from '../context/AuthContext'
 
 interface FundReportItem {
@@ -80,8 +80,27 @@ function SiswaLaporanDanaPage() {
     setSuccessMessage(null)
 
     try {
-      // Simulate file upload if exist
-      const dummyUrl = receiptFile ? `https://storage.beasiswaku.com/receipts/${Date.now()}_${receiptFile.name}` : ''
+      let uploadUrl = ''
+      if (receiptFile) {
+        // 1. Get signed upload URL and public URL from backend
+        const uploadUrlRes = await getReceiptUploadUrl(acceptedApp.id, receiptFile.name)
+        const { signedUrl, publicUrl } = uploadUrlRes
+
+        // 2. Upload the file directly to Supabase Storage
+        const storageRes = await fetch(signedUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': receiptFile.type,
+          },
+          body: receiptFile,
+        })
+
+        if (!storageRes.ok) {
+          throw new Error('Gagal mengunggah kuitansi/bukti pembayaran ke server penyimpanan.')
+        }
+
+        uploadUrl = publicUrl
+      }
 
       await submitMonthlyReport({
         application_id: acceptedApp.id,
@@ -89,7 +108,7 @@ function SiswaLaporanDanaPage() {
         kategori,
         jumlah: Number(jumlah),
         keterangan,
-        bukti_url: dummyUrl || undefined,
+        bukti_url: uploadUrl || undefined,
       })
 
       setSuccessMessage('Laporan penggunaan dana berhasil dikirim!')
