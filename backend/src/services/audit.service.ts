@@ -22,7 +22,7 @@ export const logAudit = async (req: Request | AuthenticatedRequest, options: Aud
     // Get User Agent
     const userAgent = (req.headers['user-agent'] as string) || '';
 
-    await supabaseAdmin.from('audit_logs').insert({
+    const { error } = await supabaseAdmin.from('audit_logs').insert({
       user_id: user?.userId || null,
       user_email: user?.email || null,
       user_role: user?.role || null,
@@ -36,6 +36,22 @@ export const logAudit = async (req: Request | AuthenticatedRequest, options: Aud
       session_id: user?.jti || null,
       level: options.level || 'INFO',
     });
+
+    if (error) {
+      console.warn('Failed to insert audit log with full columns, trying fallback:', error.message);
+      const targetStr = options.resourceId ? ` [Target: ${options.resourceId}]` : '';
+      const fallbackAksi = `${options.aksi}${targetStr}`;
+      
+      const { error: fallbackError } = await supabaseAdmin.from('audit_logs').insert({
+        user_id: user?.userId || null,
+        aksi: fallbackAksi,
+        ip_address: ip,
+        level: options.level || 'INFO',
+      });
+      if (fallbackError) {
+        console.error('Failed to log audit fallback:', fallbackError.message);
+      }
+    }
   } catch (error) {
     console.error('Failed to log audit:', error);
   }
@@ -56,7 +72,7 @@ export const logAuditManual = async (payload: {
   level?: 'INFO' | 'WARNING' | 'ERROR';
 }) => {
   try {
-    await supabaseAdmin.from('audit_logs').insert({
+    const { error } = await supabaseAdmin.from('audit_logs').insert({
       user_id: payload.userId || null,
       user_email: payload.userEmail || null,
       user_role: payload.userRole || null,
@@ -70,6 +86,22 @@ export const logAuditManual = async (payload: {
       session_id: payload.sessionId || null,
       level: payload.level || 'INFO',
     });
+
+    if (error) {
+      console.warn('Failed to insert audit log manual with full columns, trying fallback:', error.message);
+      const targetStr = payload.resourceId ? ` [Target: ${payload.resourceId}]` : '';
+      const fallbackAksi = `${payload.aksi}${targetStr}`;
+
+      const { error: fallbackError } = await supabaseAdmin.from('audit_logs').insert({
+        user_id: payload.userId || null,
+        aksi: fallbackAksi,
+        ip_address: payload.ipAddress || null,
+        level: payload.level || 'INFO',
+      });
+      if (fallbackError) {
+        console.error('Failed to log audit manual fallback:', fallbackError.message);
+      }
+    }
   } catch (error) {
     console.error('Failed to log audit manual:', error);
   }
