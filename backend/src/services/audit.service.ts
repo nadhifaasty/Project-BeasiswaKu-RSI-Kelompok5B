@@ -16,8 +16,15 @@ export const logAudit = async (req: Request | AuthenticatedRequest, options: Aud
     const authReq = req as AuthenticatedRequest;
     const user = authReq.user;
     
-    // Get IP Address
-    let ip = req.ip || req.socket.remoteAddress || (req.headers['x-forwarded-for'] as string) || '';
+    // Get IP Address: Prioritize X-Forwarded-For header for clients behind reverse proxies
+    const forwardedFor = req.headers['x-forwarded-for'] as string;
+    let ip = '';
+    if (forwardedFor) {
+      ip = forwardedFor.split(',')[0].trim();
+    } else {
+      ip = req.ip || req.socket.remoteAddress || '';
+    }
+
     if (ip === '::1' || ip === '::ffff:127.0.0.1') {
       ip = '127.0.0.1';
     } else if (ip.startsWith('::ffff:')) {
@@ -77,7 +84,14 @@ export const logAuditManual = async (payload: {
   level?: 'INFO' | 'WARNING' | 'ERROR';
 }) => {
   try {
-    let ip = payload.ipAddress || null;
+    let rawIp = payload.ipAddress || '';
+    let ip = '';
+    if (rawIp.includes(',')) {
+      ip = rawIp.split(',')[0].trim();
+    } else {
+      ip = rawIp;
+    }
+
     if (ip === '::1' || ip === '::ffff:127.0.0.1') {
       ip = '127.0.0.1';
     } else if (ip && ip.startsWith('::ffff:')) {
