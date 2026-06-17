@@ -388,10 +388,10 @@ function SelectionPage() {
                   <th className="py-3 px-4">Nama Lengkap</th>
                   <th className="py-3 px-4">NIM/NISN</th>
                   <th className="py-3 px-4 text-center">Skor Total</th>
-                  <th className="py-3 px-4 text-center">SA (40%)</th>
-                  <th className="py-3 px-4 text-center">SE (35%)</th>
-                  <th className="py-3 px-4 text-center">SP (15%)</th>
-                  <th className="py-3 px-4 text-center">SD (10%)</th>
+                  <th className="py-3 px-4 text-center">SA</th>
+                  <th className="py-3 px-4 text-center">SE</th>
+                  <th className="py-3 px-4 text-center">SP</th>
+                  <th className="py-3 px-4 text-center">SD</th>
                   <th className="py-3 px-4">Rekomendasi</th>
                 </tr>
               </thead>
