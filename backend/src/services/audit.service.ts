@@ -17,7 +17,12 @@ export const logAudit = async (req: Request | AuthenticatedRequest, options: Aud
     const user = authReq.user;
     
     // Get IP Address
-    const ip = req.ip || req.socket.remoteAddress || (req.headers['x-forwarded-for'] as string) || '';
+    let ip = req.ip || req.socket.remoteAddress || (req.headers['x-forwarded-for'] as string) || '';
+    if (ip === '::1' || ip === '::ffff:127.0.0.1') {
+      ip = '127.0.0.1';
+    } else if (ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
     
     // Get User Agent
     const userAgent = (req.headers['user-agent'] as string) || '';
@@ -72,6 +77,13 @@ export const logAuditManual = async (payload: {
   level?: 'INFO' | 'WARNING' | 'ERROR';
 }) => {
   try {
+    let ip = payload.ipAddress || null;
+    if (ip === '::1' || ip === '::ffff:127.0.0.1') {
+      ip = '127.0.0.1';
+    } else if (ip && ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
+
     const { error } = await supabaseAdmin.from('audit_logs').insert({
       user_id: payload.userId || null,
       user_email: payload.userEmail || null,
@@ -81,7 +93,7 @@ export const logAuditManual = async (payload: {
       resource_id: payload.resourceId || null,
       old_values: payload.oldValues || null,
       new_values: payload.newValues || null,
-      ip_address: payload.ipAddress || null,
+      ip_address: ip,
       user_agent: payload.userAgent || null,
       session_id: payload.sessionId || null,
       level: payload.level || 'INFO',
@@ -95,7 +107,7 @@ export const logAuditManual = async (payload: {
       const { error: fallbackError } = await supabaseAdmin.from('audit_logs').insert({
         user_id: payload.userId || null,
         aksi: fallbackAksi,
-        ip_address: payload.ipAddress || null,
+        ip_address: ip,
         level: payload.level || 'INFO',
       });
       if (fallbackError) {
