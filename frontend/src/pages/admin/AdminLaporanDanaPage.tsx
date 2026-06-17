@@ -47,9 +47,6 @@ function AdminLaporanDanaPage() {
 
   function resolveBuktiUrl(url: string | null) {
     if (!url) return ''
-    if (url.includes('storage.beasiswaku.com')) {
-      return '/placeholder-receipt.html'
-    }
     return url
   }
 
@@ -287,6 +284,12 @@ function AdminLaporanDanaPage() {
                     target="_blank"
                     rel="noreferrer"
                     className="text-accent font-semibold hover:underline"
+                    onClick={(e) => {
+                      if (selectedReport.bukti_url?.includes('storage.beasiswaku.com')) {
+                        e.preventDefault()
+                        alert('Bukti pembayaran tidak tersedia untuk data migrasi ini (belum diunggah ke server penyimpanan).')
+                      }
+                    }}
                   >
                     Buka Lampiran ↗
                   </a>
