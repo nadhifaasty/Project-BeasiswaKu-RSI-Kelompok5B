@@ -6,8 +6,10 @@ import routes from './routes';
 
 const app = express();
 
-// Secure backend headers with Helmet
-app.use(helmet());
+// Secure backend headers with Helmet (disabling default strict CSP to allow Vite/React dev assets and external Supabase connections)
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
 
 // Cross-Origin Resource Sharing
 app.use(cors({
