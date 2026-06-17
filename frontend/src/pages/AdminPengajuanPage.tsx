@@ -921,7 +921,7 @@ function AdminPengajuanPage() {
                     disabled={updating}
                     className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
                   >
-                    {updating ? 'Sedang Memproses...' : '🏆 Loloskan Manual (DITERIMA)'}
+                    {updating ? 'Sedang Memproses...' : 'Loloskan Manual (DITERIMA)'}
                   </button>
 
                   {/* Request Revision */}
@@ -939,7 +939,7 @@ function AdminPengajuanPage() {
                     disabled={updating}
                     className="w-full py-3 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
                   >
-                    ✗ Tolak Pengajuan
+                    Tolak Pengajuan
                   </button>
                 </div>
               </div>

@@ -48,6 +48,7 @@ function SelectionPage() {
   const [isFinalized, setIsFinalized] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [updatingAppId, setUpdatingAppId] = useState<string | null>(null)
 
   // Weights state loaded from localStorage
   const [wAkademik, setWAkademik] = useState(() => Number(localStorage.getItem('wAkademik') || 40))
@@ -197,6 +198,7 @@ function SelectionPage() {
     if (!selectedProgramId) return
     setErrorMessage(null)
     setSuccessMessage(null)
+    setUpdatingAppId(applicationId)
     try {
       await fetchApi(`/applications/${applicationId}/status`, {
         method: 'PATCH',
@@ -206,6 +208,8 @@ function SelectionPage() {
       await loadResults(selectedProgramId)
     } catch (err: any) {
       setErrorMessage(err.message || 'Gagal memperbarui status secara manual.')
+    } finally {
+      setUpdatingAppId(null)
     }
   }
 
@@ -493,19 +497,19 @@ function SelectionPage() {
                         <div className="inline-flex gap-1.5 justify-end">
                           <button
                             onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITERIMA')}
-                            disabled={item.status_rekomendasi === 'DITERIMA'}
+                            disabled={item.status_rekomendasi === 'DITERIMA' || updatingAppId === item.application_id}
                             title="Loloskan Utama"
                             className="px-2.5 py-1 rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
                           >
-                            🏆 Lolos
+                            {updatingAppId === item.application_id ? '...' : 'Lolos'}
                           </button>
                           <button
                             onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITOLAK')}
-                            disabled={item.status_rekomendasi === 'DITOLAK'}
+                            disabled={item.status_rekomendasi === 'DITOLAK' || updatingAppId === item.application_id}
                             title="Tolak"
                             className="px-2.5 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
                           >
-                            ✗ Tolak
+                            {updatingAppId === item.application_id ? '...' : 'Tolak'}
                           </button>
                         </div>
                       </td>
