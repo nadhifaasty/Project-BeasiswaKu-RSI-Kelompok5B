@@ -320,9 +320,6 @@ function AdminPengajuanPage() {
   }
 
   const filteredApps = applications.filter((app) => {
-    // Exclude accepted and rejected applicants from the default view
-    if (filter === '' && (app.status === 'DITERIMA' || app.status === 'DITOLAK')) return false;
-
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -999,7 +996,7 @@ function AdminPengajuanPage() {
           <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Kelola Pengajuan</p>
           <h1 className="text-2xl font-bold text-slate-800">Daftar Pengajuan Beasiswa</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            Terdapat <span className="font-semibold text-slate-700">{applications.filter(a => a.status !== 'DITERIMA' && a.status !== 'DITOLAK').length}</span> pengajuan masuk yang perlu diperiksa dan diverifikasi.
+            Terdapat <span className="font-semibold text-slate-700">{applications.length}</span> total pengajuan beasiswa di dalam sistem.
           </p>
         </div>
       </div>
@@ -1154,7 +1151,7 @@ function AdminPengajuanPage() {
         {!loading && filteredApps.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-slate-500">
-              Menampilkan <span className="font-semibold text-slate-700">{filteredApps.length}</span> dari <span className="font-semibold text-slate-700">{filter === '' ? applications.filter(a => a.status !== 'DITERIMA' && a.status !== 'DITOLAK').length : applications.filter(a => a.status === filter).length}</span> pengajuan
+              Menampilkan <span className="font-semibold text-slate-700">{filteredApps.length}</span> dari <span className="font-semibold text-slate-700">{filter === '' ? applications.length : applications.filter(a => a.status === filter).length}</span> pengajuan
             </p>
           </div>
         )}
