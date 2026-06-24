@@ -103,7 +103,7 @@ create table if not exists public.applications (
   ipk numeric not null,
   esai_motivasi text not null,
   prestasi_non_akademik text,
-  status text not null default 'PENDING' check (status in ('PENDING', 'TERVERIFIKASI', 'REVISI', 'DITOLAK', 'DITERIMA', 'CADANGAN')),
+  status text not null default 'PENDING' check (status in ('PENDING', 'TERVERIFIKASI', 'REVISI', 'DITOLAK', 'DITERIMA')),
   skor_kelayakan numeric,
   catatan_admin text,
   created_at timestamptz not null default now(),
@@ -163,7 +163,7 @@ create table if not exists public.selection_results (
   skor_prestasi numeric not null,
   skor_dokumen numeric not null,
   skor_total numeric not null,
-  hasil text not null check (hasil in ('DITERIMA', 'CADANGAN', 'DITOLAK')),
+  hasil text not null check (hasil in ('DITERIMA', 'DITOLAK')),
   disahkan_oleh uuid references public.profiles(id),
   disahkan_at timestamptz,
   created_at timestamptz not null default now()
@@ -243,6 +243,14 @@ alter table public.audit_logs add column if not exists old_values jsonb;
 alter table public.audit_logs add column if not exists new_values jsonb;
 alter table public.audit_logs add column if not exists user_agent text;
 alter table public.audit_logs add column if not exists session_id text;
+
+-- MIGRATION: Add 'DRAFT' status support for scholarship_programs
+-- Run this in Supabase SQL Editor if upgrading an existing database
+alter table public.scholarship_programs drop constraint if exists scholarship_programs_status_check;
+alter table public.scholarship_programs add constraint scholarship_programs_status_check check (status in ('aktif', 'ditutup', 'DRAFT'));
+
+-- MIGRATION: Add target_level column to scholarship_programs
+alter table public.scholarship_programs add column if not exists target_level text check (target_level in ('SMA', 'PERGURUAN_TINGGI'));
 - -   1 3 .   S E L E C T I O N   W E I G H T S 
  c r e a t e   t a b l e   i f   n o t   e x i s t s   p u b l i c . s e l e c t i o n _ w e i g h t s   ( 
      p r o g r a m _ i d   u u i d   p r i m a r y   k e y   r e f e r e n c e s   p u b l i c . s c h o l a r s h i p _ p r o g r a m s ( i d )   o n   d e l e t e   c a s c a d e   n o t   n u l l , 
@@ -253,5 +261,5 @@ alter table public.audit_logs add column if not exists session_id text;
      u p d a t e d _ a t   t i m e s t a m p t z   n o t   n u l l   d e f a u l t   n o w ( ) 
  ) ; 
  a l t e r   t a b l e   p u b l i c . s e l e c t i o n _ w e i g h t s   e n a b l e   r o w   l e v e l   s e c u r i t y ; 
-  
+ 
  

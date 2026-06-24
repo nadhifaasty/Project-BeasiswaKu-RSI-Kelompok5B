@@ -23,11 +23,7 @@ function AdminLayout() {
       />
 
       {/* Main Area */}
-      <div
-        className={`flex flex-1 flex-col transition-all duration-300 ${
-          sidebarCollapsed ? 'ml-16' : 'ml-60'
-        }`}
-      >
+      <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
         <AdminHeader
           user={currentUser}

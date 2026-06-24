@@ -8,7 +8,6 @@ interface StatusDistribution {
   REVISI: number
   DITOLAK: number
   DITERIMA: number
-  CADANGAN: number
 }
 
 interface EvaluationItem {
@@ -163,10 +162,6 @@ function EvaluationsPage() {
                     <div className="flex items-center justify-between border rounded-lg p-2 bg-white">
                       <span className="text-gray-500">Diterima</span>
                       <span className="font-bold text-blue-600">{item.sebaran_status.DITERIMA || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between border rounded-lg p-2 bg-white">
-                      <span className="text-gray-500">Cadangan</span>
-                      <span className="font-bold text-purple-600">{item.sebaran_status.CADANGAN || 0}</span>
                     </div>
                   </div>
                 </div>

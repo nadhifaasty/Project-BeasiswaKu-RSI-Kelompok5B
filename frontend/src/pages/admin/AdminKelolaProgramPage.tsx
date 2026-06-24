@@ -8,16 +8,16 @@ export default function AdminKelolaProgramPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProgram, setSelectedProgram] = useState<ScholarshipProgram | null>(null)
 
   const loadPrograms = async () => {
     try {
       setLoading(true)
-      const data = await getPrograms()
+      const data = await getPrograms(true)
       setPrograms(data)
-    } catch (err: any) {
+    } catch {
       setError('Gagal memuat daftar program beasiswa.')
     } finally {
       setLoading(false)
@@ -28,10 +28,14 @@ export default function AdminKelolaProgramPage() {
     loadPrograms()
   }, [])
 
-  const handleSuccess = (programName: string, isEdit: boolean) => {
+  const handleSuccess = (programName: string, isEdit: boolean, isDraft?: boolean) => {
     setIsModalOpen(false)
     setSelectedProgram(null)
-    setSuccessMsg(`Program beasiswa "${programName}" berhasil ${isEdit ? 'diperbarui' : 'dibuat'}.`)
+    if (isDraft) {
+      setSuccessMsg(`Draf program "${programName}" berhasil disimpan.`)
+    } else {
+      setSuccessMsg(`Program beasiswa "${programName}" berhasil ${isEdit ? 'diperbarui' : 'dibuat'}.`)
+    }
     loadPrograms()
     setTimeout(() => setSuccessMsg(null), 5000)
   }
@@ -46,27 +50,53 @@ export default function AdminKelolaProgramPage() {
     setSelectedProgram(null)
   }
 
-  const handleToggleStatus = async (prog: ScholarshipProgram) => {
-    if (!window.confirm(`Apakah Anda yakin ingin ${prog.status === 'aktif' || prog.status === 'OPEN' ? 'menonaktifkan' : 'mengaktifkan'} program ini?`)) return
-    
+  const handleCloseProgram = async (prog: ScholarshipProgram) => {
+    if (!window.confirm(`Yakin ingin menutup program "${prog.nama}"? Program yang sudah ditutup tidak dapat diaktifkan kembali.`)) return
+
     try {
-      const newStatus = (prog.status === 'aktif' || prog.status === 'OPEN') ? 'ditutup' : 'aktif'
-      await updateProgramStatusAdmin(prog.id, newStatus)
-      setSuccessMsg(`Status program berhasil diubah menjadi ${newStatus}.`)
+      await updateProgramStatusAdmin(prog.id, 'ditutup')
+      setSuccessMsg(`Program "${prog.nama}" berhasil ditutup.`)
       loadPrograms()
       setTimeout(() => setSuccessMsg(null), 5000)
-    } catch (err: any) {
-      setError(err.message || 'Gagal mengubah status program.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal menutup program.')
     }
   }
 
-  const formatRupiah = (angka: number) => {
+  const formatRupiah = (angka: number | string) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(angka)
+      minimumFractionDigits: 0,
+    }).format(Number(angka))
   }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'aktif':
+      case 'OPEN':
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-green-50 text-green-700 border-green-200">
+            Aktif
+          </span>
+        )
+      case 'DRAFT':
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-yellow-50 text-yellow-700 border-yellow-200">
+            Draf
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-red-50 text-red-700 border-red-200">
+            Ditutup
+          </span>
+        )
+    }
+  }
+
+  const isActive = (status: string) => status === 'aktif' || status === 'OPEN'
+  const isEditable = (status: string) => status === 'DRAFT'
 
   return (
     <div className="space-y-6">
@@ -90,14 +120,15 @@ export default function AdminKelolaProgramPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg">
-          {error}
+        <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 ml-4">✕</button>
         </div>
       )}
 
       {successMsg && (
         <div className="bg-green-50 text-green-700 p-4 rounded-lg flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           {successMsg}
@@ -120,7 +151,8 @@ export default function AdminKelolaProgramPage() {
                 <tr className="bg-slate-50 border-b border-slate-200 text-sm text-slate-600">
                   <th className="px-6 py-4 font-medium">Nama Program</th>
                   <th className="px-6 py-4 font-medium">Nominal (Bulan)</th>
-                  <th className="px-6 py-4 font-medium">Kuota</th>
+                  <th className="px-6 py-4 font-medium">Jumlah Pendaftar</th>
+                  <th className="px-6 py-4 font-medium">Jumlah Lolos</th>
                   <th className="px-6 py-4 font-medium">Deadline</th>
                   <th className="px-6 py-4 font-medium">Status</th>
                   <th className="px-6 py-4 font-medium text-right">Aksi</th>
@@ -136,7 +168,10 @@ export default function AdminKelolaProgramPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-700 font-medium whitespace-nowrap">
-                      {formatRupiah(Number(prog.nominal))}
+                      {formatRupiah(prog.nominal)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-slate-900 font-medium">{prog.applicant_count ?? 0}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
@@ -145,31 +180,34 @@ export default function AdminKelolaProgramPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
-                      {new Date(prog.deadline).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {prog.deadline
+                        ? new Date(prog.deadline).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                        prog.status === 'aktif' || prog.status === 'OPEN' 
-                          ? 'bg-green-50 text-green-700 border-green-200'
-                          : prog.status === 'DRAFT'
-                          ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                          : 'bg-red-50 text-red-700 border-red-200'
-                      }`}>
-                        {prog.status.toUpperCase()}
-                      </span>
+                      {getStatusBadge(prog.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right space-x-3">
-                      <button 
-                        onClick={() => handleToggleStatus(prog)} 
-                        className={`${prog.status === 'aktif' || prog.status === 'OPEN' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'} text-sm font-medium`}
-                      >
-                        {prog.status === 'aktif' || prog.status === 'OPEN' ? 'Tutup' : 'Aktifkan'}
-                      </button>
-                      <button onClick={() => handleEdit(prog)} className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
+                      {isActive(prog.status) && (
+                        <button
+                          onClick={() => handleCloseProgram(prog)}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Tutup
+                        </button>
+                      )}
+                      {isEditable(prog.status) && (
+                        <button
+                          onClick={() => handleEdit(prog)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

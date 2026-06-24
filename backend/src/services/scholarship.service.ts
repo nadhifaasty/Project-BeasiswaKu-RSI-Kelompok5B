@@ -80,10 +80,6 @@ class ScholarshipService {
       throw new Error('Program beasiswa ini sudah ditutup karena melewati batas deadline.');
     }
 
-    if (program.sisa_kuota <= 0) {
-      throw new Error('Kuota program beasiswa ini sudah penuh.');
-    }
-
     // 2. Check if user already applied to ANY program (BR-01 & BR-02)
     // Kecuali jika ada DRAFT yang sudah dibuat
     const { data: existing } = await supabaseAdmin
@@ -152,14 +148,6 @@ class ScholarshipService {
 
     if (error) throw new Error(`Gagal membuat pengajuan: ${error.message}`);
 
-    // 6. Decrease remaining quota ONLY IF NOT DRAFT
-    if (!isDraft) {
-      await supabaseAdmin
-        .from('scholarship_programs')
-        .update({ sisa_kuota: program.sisa_kuota - 1 })
-        .eq('id', program_id);
-    }
-
     return data;
   }
 
@@ -191,11 +179,6 @@ class ScholarshipService {
       throw new Error('Program beasiswa ini sudah ditutup karena melewati batas deadline.');
     }
 
-    // 3. Check quota again
-    if (program.sisa_kuota <= 0) {
-      throw new Error('Kuota program beasiswa ini telah habis.');
-    }
-
     // 4. Update status and generate final reference number
     const nomor_referensi = this.generateReferenceNumber();
     const { data: updatedApp, error: updateError } = await supabaseAdmin
@@ -210,12 +193,6 @@ class ScholarshipService {
       .single();
 
     if (updateError) throw new Error(`Gagal mengirim pengajuan: ${updateError.message}`);
-
-    // 5. Decrease quota
-    await supabaseAdmin
-      .from('scholarship_programs')
-      .update({ sisa_kuota: program.sisa_kuota - 1 })
-      .eq('id', app.program_id);
 
     return updatedApp;
   }
@@ -257,9 +234,24 @@ class ScholarshipService {
     status: string,
     catatan_admin?: string
   ) {
-    const validStatuses = ['PENDING', 'TERVERIFIKASI', 'REVISI', 'DITOLAK', 'DITERIMA', 'CADANGAN'];
+    const validStatuses = ['PENDING', 'TERVERIFIKASI', 'REVISI', 'DITOLAK', 'DITERIMA'];
     if (!validStatuses.includes(status)) {
       throw new Error(`Status tidak valid. Pilihan: ${validStatuses.join(', ')}`);
+    }
+
+    // Check if currently accepted (DITERIMA)
+    const { data: currentApp, error: fetchErr } = await supabaseAdmin
+      .from('applications')
+      .select('status, program_id')
+      .eq('id', applicationId)
+      .maybeSingle();
+
+    if (fetchErr || !currentApp) {
+      throw new Error('Pengajuan tidak ditemukan.');
+    }
+
+    if (currentApp.status === 'DITERIMA') {
+      throw new Error('Pengajuan yang sudah lolos (DITERIMA) tidak dapat diubah statusnya lagi.');
     }
 
     const { data, error } = await supabaseAdmin
@@ -275,9 +267,47 @@ class ScholarshipService {
 
     if (error) throw new Error(`Gagal mengupdate status: ${error.message}`);
 
+    // Adjust remaining quota
+    if (status === 'DITERIMA' && currentApp.status !== 'DITERIMA') {
+      const { data: program } = await supabaseAdmin
+        .from('scholarship_programs')
+        .select('sisa_kuota')
+        .eq('id', currentApp.program_id)
+        .single();
+      if (program) {
+        await supabaseAdmin
+          .from('scholarship_programs')
+          .update({ sisa_kuota: Math.max(0, program.sisa_kuota - 1) })
+          .eq('id', currentApp.program_id);
+      }
+    } else if (currentApp.status === 'DITERIMA' && status !== 'DITERIMA') {
+      const { data: program } = await supabaseAdmin
+        .from('scholarship_programs')
+        .select('sisa_kuota')
+        .eq('id', currentApp.program_id)
+        .single();
+      if (program) {
+        await supabaseAdmin
+          .from('scholarship_programs')
+          .update({ sisa_kuota: program.sisa_kuota + 1 })
+          .eq('id', currentApp.program_id);
+      }
+    }
+
+    // Automatically validate all documents when application is verified or accepted
+    if (status === 'TERVERIFIKASI' || status === 'DITERIMA') {
+      const { error: docUpdateErr } = await supabaseAdmin
+        .from('application_documents')
+        .update({ status: 'tervalidasi' })
+        .eq('application_id', applicationId);
+      if (docUpdateErr) {
+        console.error('Error auto-validating application documents:', docUpdateErr);
+      }
+    }
+
     // Sync with selection results
     try {
-      if (['DITERIMA', 'CADANGAN', 'DITOLAK'].includes(status)) {
+      if (['DITERIMA', 'DITOLAK'].includes(status)) {
         const { data: selectionResult } = await supabaseAdmin
           .from('selection_results')
           .select('id')

@@ -36,7 +36,7 @@ interface ApiResponse<T> {
   data: T
 }
 
-type StatusFilter = '' | 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
+type StatusFilter = '' | 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA'
 type DetailTab = 'biodata' | 'akademik' | 'ekonomi' | 'dokumen' | 'riwayat'
 
 // ============ HELPERS ============
@@ -68,7 +68,6 @@ function StatusBadge({ status }: { status: string }) {
     REVISI:       { label: 'Revision',     cls: 'bg-orange-100 text-orange-800 border border-orange-200' },
     DITERIMA:     { label: 'Accepted',     cls: 'bg-green-100 text-green-800 border border-green-200' },
     DITOLAK:      { label: 'Rejected',     cls: 'bg-red-100 text-red-800 border border-red-200' },
-    CADANGAN:     { label: 'Cadangan',     cls: 'bg-purple-100 text-purple-800 border border-purple-200' },
   }
   const s = map[status] || { label: status, cls: 'bg-gray-100 text-gray-700 border border-gray-200' }
   return (
@@ -321,14 +320,17 @@ function AdminPengajuanPage() {
   }
 
   const filteredApps = applications.filter((app) => {
-    if (!search) return true
-    const q = search.toLowerCase()
+    // Exclude accepted and rejected applicants from the default view
+    if (filter === '' && (app.status === 'DITERIMA' || app.status === 'DITOLAK')) return false;
+
+    if (!search) return true;
+    const q = search.toLowerCase();
     return (
       app.profiles.nama_lengkap.toLowerCase().includes(q) ||
       app.profiles.nim_nisn.toLowerCase().includes(q) ||
       app.nomor_referensi.toLowerCase().includes(q)
-    )
-  })
+    );
+  });
 
   // Parse prestasi non akademik
   function parsePrestasi(raw: string | null): Array<{ nama: string; tingkat: string; tahun: string }> {
@@ -428,6 +430,12 @@ function AdminPengajuanPage() {
       kelayakanLabel,
       kelayakanColor
     }
+  })()
+
+  const allDocsVerified = (() => {
+    if (!selectedApp) return false
+    if (!studentDocuments || studentDocuments.length === 0) return false
+    return studentDocuments.every(doc => doc.status === 'tervalidasi')
   })()
 
   // Find doc helper
@@ -770,11 +778,11 @@ function AdminPengajuanPage() {
                                     {doc ? (
                                       <>
                                         <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
-                                          doc.status === 'tervalidasi' ? 'bg-green-50 text-green-700 border-green-200' :
+                                          (doc.status === 'tervalidasi' || selectedApp.status === 'TERVERIFIKASI' || selectedApp.status === 'DITERIMA') ? 'bg-green-50 text-green-700 border-green-200' :
                                           doc.status === 'ditolak' ? 'bg-red-50 text-red-700 border-red-200' :
                                           'bg-yellow-50 text-yellow-700 border-yellow-200'
                                         }`}>
-                                          {doc.status}
+                                          {(selectedApp.status === 'TERVERIFIKASI' || selectedApp.status === 'DITERIMA') ? 'tervalidasi' : doc.status}
                                         </span>
                                         <span className="text-[10px] text-gray-400">Diunggah pada {new Date(doc.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}</span>
                                       </>
@@ -786,7 +794,7 @@ function AdminPengajuanPage() {
                                   </div>
                                 </div>
                               </div>
-
+ 
                               {/* Document Action Controls */}
                               <div className="flex items-center gap-2 self-end md:self-center">
                                 {doc ? (
@@ -799,22 +807,27 @@ function AdminPengajuanPage() {
                                     >
                                       Buka Berkas
                                     </a>
-                                    {/* Validasi Button */}
-                                    <button
-                                      onClick={() => handleUpdateDocumentStatus(doc.id, 'tervalidasi')}
-                                      disabled={updatingDocId === doc.id || doc.status === 'tervalidasi'}
-                                      className="px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 shadow-sm"
-                                    >
-                                      {updatingDocId === doc.id ? '...' : '✓ Validasi'}
-                                    </button>
-                                    {/* Tolak Button */}
-                                    <button
-                                      onClick={() => handleUpdateDocumentStatus(doc.id, 'ditolak')}
-                                      disabled={updatingDocId === doc.id || doc.status === 'ditolak'}
-                                      className="px-3.5 py-2 rounded-xl border border-red-200 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                                    >
-                                      {updatingDocId === doc.id ? '...' : '✗ Tolak'}
-                                    </button>
+                                    {/* Validasi & Tolak Buttons */}
+                                    {selectedApp.status !== 'TERVERIFIKASI' && selectedApp.status !== 'DITERIMA' && selectedApp.status !== 'DITOLAK' && (
+                                      <>
+                                        {/* Validasi Button */}
+                                        <button
+                                          onClick={() => handleUpdateDocumentStatus(doc.id, 'tervalidasi')}
+                                          disabled={updatingDocId === doc.id || doc.status === 'tervalidasi'}
+                                          className="px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 shadow-sm"
+                                        >
+                                          {updatingDocId === doc.id ? '...' : '✓ Validasi'}
+                                        </button>
+                                        {/* Tolak Button */}
+                                        <button
+                                          onClick={() => handleUpdateDocumentStatus(doc.id, 'ditolak')}
+                                          disabled={updatingDocId === doc.id || doc.status === 'ditolak'}
+                                          className="px-3.5 py-2 rounded-xl border border-red-200 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                                        >
+                                          {updatingDocId === doc.id ? '...' : '✗ Tolak'}
+                                        </button>
+                                      </>
+                                    )}
                                   </>
                                 ) : (
                                   <span className="text-xs text-gray-300 italic">No document file</span>
@@ -873,7 +886,6 @@ function AdminPengajuanPage() {
                             {selectedApp.status === 'REVISI' && `Admin meminta revisi berkas siswa. Catatan: "${selectedApp.catatan_admin || '—'}"`}
                             {selectedApp.status === 'DITOLAK' && `Pengajuan ditolak. Catatan: "${selectedApp.catatan_admin || '—'}"`}
                             {selectedApp.status === 'DITERIMA' && 'Selamat! Siswa ini resmi diterima sebagai penerima program beasiswa.'}
-                            {selectedApp.status === 'CADANGAN' && 'Pengajuan masuk dalam posisi cadangan penerima beasiswa.'}
                           </p>
                         </div>
                       </div>
@@ -893,56 +905,85 @@ function AdminPengajuanPage() {
                 Keputusan Verifikasi
               </h3>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Catatan Verifikasi</label>
-                  <textarea
-                    value={catatan}
-                    onChange={(e) => setCatatan(e.target.value)}
-                    placeholder="Tambahkan alasan persetujuan, tolak, atau revisi dokumen..."
-                    rows={4}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none bg-slate-50 transition"
-                  />
+              {selectedApp.status === 'DITERIMA' ? (
+                <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 text-center space-y-2 mt-4 shadow-sm">
+                  <svg className="w-8 h-8 text-green-600 mx-auto animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="font-bold text-sm">Pengajuan Telah Lolos Beasiswa</p>
+                  <p className="text-xs text-green-700 leading-relaxed">
+                    Status pengajuan ini adalah <strong>DITERIMA</strong>. Calon penerima beasiswa ini sudah lolos dan statusnya tidak dapat diubah lagi.
+                  </p>
                 </div>
-
-                <div className="space-y-2 pt-2">
-                  {/* Approve */}
-                  <button
-                    onClick={() => handleUpdateStatusDirect('TERVERIFIKASI')}
-                    disabled={updating}
-                    className="w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    {updating ? 'Sedang Memproses...' : '✓ Setujui Pengajuan'}
-                  </button>
-
-                  {/* Loloskan Manual */}
-                  <button
-                    onClick={() => handleUpdateStatusDirect('DITERIMA')}
-                    disabled={updating}
-                    className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    {updating ? 'Sedang Memproses...' : 'Loloskan Manual (DITERIMA)'}
-                  </button>
-
-                  {/* Request Revision */}
-                  <button
-                    onClick={() => handleUpdateStatusDirect('REVISI')}
-                    disabled={updating}
-                    className="w-full py-3 rounded-xl border border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 transition font-bold text-sm flex items-center justify-center gap-2"
-                  >
-                    ⚠️ Minta Revisi Berkas
-                  </button>
-
-                  {/* Reject */}
-                  <button
-                    onClick={() => handleUpdateStatusDirect('DITOLAK')}
-                    disabled={updating}
-                    className="w-full py-3 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    Tolak Pengajuan
-                  </button>
+              ) : selectedApp.status === 'TERVERIFIKASI' ? (
+                <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-4 text-center space-y-2 mt-4 shadow-sm">
+                  <svg className="w-8 h-8 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="font-bold text-sm">Sudah Terverifikasi</p>
+                  <p className="text-xs text-blue-700 leading-relaxed">
+                    Berkas pengajuan ini telah terverifikasi dan siap untuk tahap penyeleksian.
+                  </p>
                 </div>
-              </div>
+              ) : selectedApp.status === 'DITOLAK' ? (
+                <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-center space-y-2 mt-4 shadow-sm">
+                  <svg className="w-8 h-8 text-red-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="font-bold text-sm">Pengajuan Telah Ditolak</p>
+                  <p className="text-xs text-red-700 leading-relaxed">
+                    Aplikasi ini ditolak dan tidak dapat diproses lebih lanjut.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Catatan Verifikasi</label>
+                    <textarea
+                      value={catatan}
+                      onChange={(e) => setCatatan(e.target.value)}
+                      placeholder="Tambahkan alasan persetujuan, tolak, atau revisi dokumen..."
+                      rows={4}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none bg-slate-50 transition"
+                    />
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    {/* Approve */}
+                    <button
+                      onClick={() => {
+                        if (!allDocsVerified) {
+                          alert('Harap validasi semua berkas dokumen di tab "DOKUMEN" sebelum menyetujui pengajuan ini.');
+                          return;
+                        }
+                        handleUpdateStatusDirect('TERVERIFIKASI');
+                      }}
+                      disabled={updating}
+                      className="w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      {updating ? 'Sedang Memproses...' : '✓ Setujui Pengajuan'}
+                    </button>
+
+                    {/* Request Revision */}
+                    <button
+                      onClick={() => handleUpdateStatusDirect('REVISI')}
+                      disabled={updating}
+                      className="w-full py-3 rounded-xl border border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 transition font-bold text-sm flex items-center justify-center gap-2"
+                    >
+                      ⚠️ Minta Revisi Berkas
+                    </button>
+
+                    {/* Reject */}
+                    <button
+                      onClick={() => handleUpdateStatusDirect('DITOLAK')}
+                      disabled={updating}
+                      className="w-full py-3 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      Tolak Pengajuan
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -958,7 +999,7 @@ function AdminPengajuanPage() {
           <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Kelola Pengajuan</p>
           <h1 className="text-2xl font-bold text-slate-800">Daftar Pengajuan Beasiswa</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            Terdapat <span className="font-semibold text-slate-700">{applications.length}</span> pengajuan masuk yang perlu diperiksa dan diverifikasi.
+            Terdapat <span className="font-semibold text-slate-700">{applications.filter(a => a.status !== 'DITERIMA' && a.status !== 'DITOLAK').length}</span> pengajuan masuk yang perlu diperiksa dan diverifikasi.
           </p>
         </div>
       </div>
@@ -1002,7 +1043,6 @@ function AdminPengajuanPage() {
             <option value="REVISI">Revision</option>
             <option value="DITERIMA">Accepted</option>
             <option value="DITOLAK">Rejected</option>
-            <option value="CADANGAN">Cadangan</option>
           </select>
           <Button 
             variant="outline" 
@@ -1032,87 +1072,89 @@ function AdminPengajuanPage() {
             <p className="font-medium">Belum ada pengajuan{filter ? ` dengan status "${filter}"` : ''}.</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Siswa</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Program</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tgl Daftar</th>
-                <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Skor Kelayakan</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filteredApps.map((app) => (
-                <tr key={app.id} className="hover:bg-slate-50/60 transition-colors group">
-                  {/* Siswa */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full ${getAvatarColor(app.profiles.nama_lengkap)} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
-                        {getInitials(app.profiles.nama_lengkap)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-800">{app.profiles.nama_lengkap}</p>
-                        <p className="text-xs text-gray-400">{app.profiles.nim_nisn}</p>
-                      </div>
-                    </div>
-                  </td>
-                  {/* Program */}
-                  <td className="px-6 py-4">
-                    <ProgramIcon nama={app.scholarship_programs.nama} />
-                  </td>
-                  {/* Tgl Daftar */}
-                  <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm">
-                        {new Date(app.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
-                    </div>
-                  </td>
-                  {/* Skor Kelayakan */}
-                  <td className="px-6 py-4 text-center">
-                    {app.skor_kelayakan !== null ? (
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
-                        app.skor_kelayakan >= 85 ? 'bg-green-50 text-green-700 border-green-200' :
-                        app.skor_kelayakan >= 70 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                        'bg-red-50 text-red-700 border-red-200'
-                      }`}>
-                        {app.skor_kelayakan}/100
-                      </span>
-                    ) : (
-                      <span className="text-gray-300 text-xs">—</span>
-                    )}
-                  </td>
-                  {/* Status */}
-                  <td className="px-6 py-4">
-                    <StatusBadge status={app.status} />
-                  </td>
-                  {/* Aksi */}
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => openDetail(app)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-sm transition group-hover:shadow"
-                    >
-                      Detail
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[900px]">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Siswa</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Program</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tgl Daftar</th>
+                  <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Skor Kelayakan</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredApps.map((app) => (
+                  <tr key={app.id} className="hover:bg-slate-50/60 transition-colors group">
+                    {/* Siswa */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full ${getAvatarColor(app.profiles.nama_lengkap)} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
+                          {getInitials(app.profiles.nama_lengkap)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-800">{app.profiles.nama_lengkap}</p>
+                          <p className="text-xs text-gray-400">{app.profiles.nim_nisn}</p>
+                        </div>
+                      </div>
+                    </td>
+                    {/* Program */}
+                    <td className="px-6 py-4">
+                      <ProgramIcon nama={app.scholarship_programs.nama} />
+                    </td>
+                    {/* Tgl Daftar */}
+                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm">
+                          {new Date(app.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </td>
+                    {/* Skor Kelayakan */}
+                    <td className="px-6 py-4 text-center">
+                      {app.skor_kelayakan !== null ? (
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
+                          app.skor_kelayakan >= 85 ? 'bg-green-50 text-green-700 border-green-200' :
+                          app.skor_kelayakan >= 70 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                          'bg-red-50 text-red-700 border-red-200'
+                        }`}>
+                          {app.skor_kelayakan}/100
+                        </span>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
+                    {/* Status */}
+                    <td className="px-6 py-4">
+                      <StatusBadge status={app.status} />
+                    </td>
+                    {/* Aksi */}
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => openDetail(app)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-sm transition group-hover:shadow"
+                      >
+                        Detail
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {!loading && filteredApps.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-slate-500">
-              Menampilkan <span className="font-semibold text-slate-700">{filteredApps.length}</span> dari <span className="font-semibold text-slate-700">{applications.length}</span> pengajuan
+              Menampilkan <span className="font-semibold text-slate-700">{filteredApps.length}</span> dari <span className="font-semibold text-slate-700">{filter === '' ? applications.filter(a => a.status !== 'DITERIMA' && a.status !== 'DITOLAK').length : applications.filter(a => a.status === filter).length}</span> pengajuan
             </p>
           </div>
         )}

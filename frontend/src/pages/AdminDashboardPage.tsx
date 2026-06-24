@@ -310,33 +310,36 @@ function AdminDashboardPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {applications.slice(0, 5).map((app) => (
-              <tr key={app.id} className="hover:bg-gray-50">
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-xs font-bold text-primary">
-                        {app.profiles?.nama_lengkap?.charAt(0)?.toUpperCase() || '?'}
-                      </span>
+            {applications
+              .filter((app) => app.status !== 'DITERIMA' && app.status !== 'DITOLAK')
+              .slice(0, 5)
+              .map((app) => (
+                <tr key={app.id} className="hover:bg-gray-50">
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-primary">
+                          {app.profiles?.nama_lengkap?.charAt(0)?.toUpperCase() || '?'}
+                        </span>
+                      </div>
+                      <span className="font-medium text-gray-800">{app.profiles?.nama_lengkap || '-'}</span>
                     </div>
-                    <span className="font-medium text-gray-800">{app.profiles?.nama_lengkap || '-'}</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3 text-gray-600">
-                  {app.scholarship_programs?.nama || '-'}
-                </td>
-                <td className="px-5 py-3 text-gray-500">
-                  {new Date(app.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </td>
-                <td className="px-5 py-3">{getStatusBadge(app.status)}</td>
-                <td className="px-5 py-3">
-                  <Link to="/admin/pengajuan" className="text-accent hover:underline text-sm">
-                    Review
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {applications.length === 0 && (
+                  </td>
+                  <td className="px-5 py-3 text-gray-600">
+                    {app.scholarship_programs?.nama || '-'}
+                  </td>
+                  <td className="px-5 py-3 text-gray-500">
+                    {new Date(app.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="px-5 py-3">{getStatusBadge(app.status)}</td>
+                  <td className="px-5 py-3">
+                    <Link to="/admin/pengajuan" className="text-accent hover:underline text-sm">
+                      Review
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            {applications.filter((app) => app.status !== 'DITERIMA' && app.status !== 'DITOLAK').length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
                   Belum ada pengajuan masuk.

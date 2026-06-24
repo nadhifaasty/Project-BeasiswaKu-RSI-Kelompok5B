@@ -20,6 +20,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    if (!/^[a-zA-Z\s]+$/.test(nama_lengkap)) {
+      sendError(res, 'Nama lengkap hanya boleh berisi huruf dan spasi.', 400);
+      return;
+    }
+
     if (password.length < 8) {
       sendError(res, 'Password minimal 8 karakter.', 400);
       return;

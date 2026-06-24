@@ -126,13 +126,6 @@ function StatusTrackingPage() {
           text: 'Diterima',
           desc: 'Selamat! Anda dinyatakan lolos sebagai penerima beasiswa periode ini. Silakan lengkapi data rekening untuk pencairan dana.',
         }
-      case 'CADANGAN':
-        return {
-          bg: 'bg-purple-50 text-purple-800 border-purple-200',
-          badge: 'bg-purple-100 text-purple-800 ring-purple-600/20',
-          text: 'Cadangan',
-          desc: 'Anda ditempatkan sebagai kandidat cadangan. Jika penerima utama membatalkan atau kuota bertambah, Anda akan dihubungi.',
-        }
       case 'DITOLAK':
         return {
           bg: 'bg-red-50 text-red-800 border-red-200',
@@ -193,7 +186,7 @@ function StatusTrackingPage() {
   const isRevisi = app.status === 'REVISI'
   const isDitolak = app.status === 'DITOLAK'
   const isVerified = app.status !== 'PENDING' && app.status !== 'REVISI' && app.status !== 'DRAFT'
-  const isFinalized = ['DITERIMA', 'CADANGAN', 'DITOLAK'].includes(app.status)
+  const isFinalized = ['DITERIMA', 'DITOLAK'].includes(app.status)
   const isAccepted = app.status === 'DITERIMA'
 
   return (
@@ -369,10 +362,6 @@ function StatusTrackingPage() {
                     <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xs ring-4 ring-white animate-bounce">
                       🎉
                     </span>
-                  ) : app.status === 'CADANGAN' ? (
-                    <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xs ring-4 ring-white">
-                      ★
-                    </span>
                   ) : (
                     <span className="absolute -left-[29px] top-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xs ring-4 ring-white">
                       ✕
@@ -388,7 +377,6 @@ function StatusTrackingPage() {
                   <p className="text-sm text-gray-600 mt-1">
                     {!isFinalized && 'Pengumuman akan dirilis setelah proses pemeringkatan disahkan oleh Admin.'}
                     {isFinalized && isAccepted && <span className="text-green-700 font-semibold">Anda lolos sebagai penerima beasiswa utama!</span>}
-                    {isFinalized && app.status === 'CADANGAN' && <span className="text-purple-700 font-semibold">Anda lolos sebagai pendaftar cadangan.</span>}
                     {isFinalized && app.status === 'DITOLAK' && <span className="text-red-700 font-semibold">Mohon maaf, Anda belum lolos pemeringkatan kuota.</span>}
                   </p>
                 </div>

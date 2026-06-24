@@ -1,217 +1,294 @@
-import { useState, useEffect } from 'react'
-import { createProgramAdmin, updateProgramAdmin, type CreateProgramPayload, type ScholarshipProgram } from '../../services/scholarship'
+import { useState, type FormEvent } from 'react'
+import {
+  createProgramAdmin,
+  updateProgramAdmin,
+  saveProgramAsDraft,
+  updateProgramStatusAdmin,
+  type ScholarshipProgram,
+} from '../../services/scholarship'
 
 interface ProgramFormModalProps {
-  initialData?: ScholarshipProgram | null
+  initialData: ScholarshipProgram | null
   onClose: () => void
-  onSuccess: (programName: string, isEdit: boolean) => void
+  onSuccess: (programName: string, isEdit: boolean, isDraft?: boolean) => void
 }
 
 export function ProgramFormModal({ initialData, onClose, onSuccess }: ProgramFormModalProps) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  
-  const isEdit = !!initialData
+  const isDraftEdit = initialData?.status === 'DRAFT'
+  const isClosedEdit = initialData?.status === 'ditutup' || initialData?.status === 'CLOSED'
 
-  const [formData, setFormData] = useState<CreateProgramPayload>({
+  const [form, setForm] = useState({
     name: initialData?.nama || '',
-    target_level: (initialData?.nama.includes('SMA') ? 'SMA' : 'PERGURUAN_TINGGI') as any, // Simple inference since backend target_level isn't fully exposed
-    nominal: initialData ? Number(initialData.nominal) : 0,
-    quota: initialData?.kuota || 0,
-    deadline: initialData ? new Date(initialData.deadline).toISOString().split('T')[0] : '',
+    target_level: initialData?.target_level || '',
+    nominal: initialData?.nominal?.toString() || '',
+    quota: initialData?.kuota?.toString() || '',
+    deadline: initialData?.deadline ? initialData.deadline.split('T')[0] : '',
     description: initialData?.deskripsi || '',
-    requirements: ''
   })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Better inference for target_level if possible
-  useEffect(() => {
-    if (initialData) {
-      const level = initialData.nama.toLowerCase().includes('sma') ? 'SMA' : 'PERGURUAN_TINGGI'
-      setFormData(prev => ({ ...prev, target_level: level }))
-    }
-  }, [initialData])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'nominal' || name === 'quota' ? Number(value) : value
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Normal save: create new active program, or update closed program data
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setSaving(true)
     setError(null)
 
-    // Validasi frontend
-    if (!formData.name) return setError('Nama program wajib diisi.')
-    if (formData.nominal <= 0) return setError('Nominal harus lebih dari 0.')
-    if (formData.quota <= 0) return setError('Kuota harus lebih dari 0.')
-    if (!formData.deadline) return setError('Deadline wajib diisi.')
-    
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const deadlineDate = new Date(formData.deadline)
-    if (deadlineDate <= today) return setError('Deadline harus setelah hari ini.')
+    try {
+      const payload = {
+        name: form.name,
+        target_level: form.target_level as 'SMA' | 'PERGURUAN_TINGGI',
+        nominal: Number(form.nominal),
+        quota: Number(form.quota),
+        deadline: form.deadline,
+        description: form.description,
+      }
+
+      if (initialData) {
+        await updateProgramAdmin(initialData.id, payload)
+      } else {
+        await createProgramAdmin(payload)
+      }
+      onSuccess(form.name, !!initialData)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Save as draft: allow partial data, send all values including empty strings
+  const handleSaveDraft = async () => {
+    setSaving(true)
+    setError(null)
 
     try {
-      setLoading(true)
-      if (isEdit && initialData) {
-        // Prepare payload, omitting name/quota/target_level if we don't want to change them (but backend update allows partial)
-        const payload: Partial<CreateProgramPayload> = { ...formData }
-        // We might want to selectively send fields, but sending all is fine as long as validation passes
-        await updateProgramAdmin(initialData.id, payload)
-        onSuccess(formData.name, true)
+      if (initialData) {
+        // Send all field values so clearing a field persists.
+        // Empty nominal/quota → 0 (allowed for draft), empty deadline → undefined (no update)
+        await updateProgramAdmin(initialData.id, {
+          name: form.name,
+          target_level: form.target_level ? (form.target_level as 'SMA' | 'PERGURUAN_TINGGI') : undefined,
+          nominal: form.nominal !== '' ? Number(form.nominal) : 0,
+          quota: form.quota !== '' ? Number(form.quota) : 0,
+          deadline: form.deadline || undefined,
+          description: form.description,
+        })
       } else {
-        await createProgramAdmin(formData)
-        onSuccess(formData.name, false)
+        await saveProgramAsDraft({
+          name: form.name || undefined,
+          target_level: form.target_level ? (form.target_level as 'SMA' | 'PERGURUAN_TINGGI') : undefined,
+          nominal: form.nominal ? Number(form.nominal) : undefined,
+          quota: form.quota ? Number(form.quota) : undefined,
+          deadline: form.deadline || undefined,
+          description: form.description || undefined,
+          status: 'DRAFT',
+        })
       }
-    } catch (err: any) {
-      setError(err.message || 'Data tidak valid. Gagal menyimpan program.')
+      onSuccess(form.name || 'Draf Program', !!initialData, true)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan.')
     } finally {
-      setLoading(false)
+      setSaving(false)
+    }
+  }
+
+  // Activate: validate ALL fields required, save, then set status aktif (only for DRAFT)
+  const handleActivate = async () => {
+    if (!form.name) { setError('Nama program wajib diisi.'); return }
+    if (!form.target_level) { setError('Level target wajib diisi.'); return }
+    if (!form.nominal || Number(form.nominal) <= 0) { setError('Nominal beasiswa wajib diisi.'); return }
+    if (!form.quota || Number(form.quota) <= 0) { setError('Jumlah lolos wajib diisi.'); return }
+    if (!form.deadline) { setError('Deadline wajib diisi.'); return }
+    if (new Date(form.deadline) <= new Date()) { setError('Deadline harus setelah hari ini.'); return }
+    if (!form.description.trim()) { setError('Deskripsi wajib diisi.'); return }
+    if (!initialData) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      await updateProgramAdmin(initialData.id, {
+        name: form.name,
+        target_level: form.target_level ? (form.target_level as 'SMA' | 'PERGURUAN_TINGGI') : undefined,
+        nominal: Number(form.nominal),
+        quota: Number(form.quota),
+        deadline: form.deadline,
+        description: form.description || undefined,
+      })
+      await updateProgramStatusAdmin(initialData.id, 'aktif')
+      onSuccess(form.name, true)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan.')
+    } finally {
+      setSaving(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-semibold text-gray-800">{isEdit ? 'Edit Program Beasiswa' : 'Tambah Program Beasiswa Baru'}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-900">
+            {initialData ? 'Edit Program Beasiswa' : 'Tambah Program Baru'}
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {error && (
-            <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">
-              {error}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {isDraftEdit && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm px-3 py-2 rounded-lg">
+              Program ini masih berstatus draf. Lengkapi informasi untuk mengaktifkannya.
             </div>
           )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Nama Program <span className="text-red-500">*</span></label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Misal: Beasiswa Juara"
-                required
-                maxLength={100}
-              />
+          {isClosedEdit && (
+            <div className="bg-slate-50 border border-slate-200 text-slate-700 text-sm px-3 py-2 rounded-lg">
+              Program ini sudah ditutup. Data masih bisa diedit namun program tidak dapat diaktifkan kembali.
             </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Target Level <span className="text-red-500">*</span></label>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nama Program {!isDraftEdit && '*'}
+            </label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required={!isDraftEdit}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Level Target {!isDraftEdit && '*'}
+              </label>
               <select
-                name="target_level"
-                value={formData.target_level}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
-                required
+                value={form.target_level}
+                onChange={(e) => setForm({ ...form, target_level: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required={!isDraftEdit}
               >
-                <option value="SMA">SMA / Sederajat</option>
+                <option value="">Pilih Level</option>
+                <option value="SMA">SMA</option>
                 <option value="PERGURUAN_TINGGI">Perguruan Tinggi</option>
               </select>
             </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Nominal per Bulan (Rp) <span className="text-red-500">*</span></label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nominal / Bulan (Rp) {!isDraftEdit && '*'}
+              </label>
               <input
                 type="number"
-                name="nominal"
-                value={formData.nominal || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Misal: 500000"
-                required
+                value={form.nominal}
+                onChange={(e) => setForm({ ...form, nominal: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required={!isDraftEdit}
                 min="1"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Kuota Penerima <span className="text-red-500">*</span></label>
-              <input
-                type="number"
-                name="quota"
-                value={formData.quota || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Misal: 50"
-                required
-                min="1"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Deadline Pendaftaran <span className="text-red-500">*</span></label>
-              <input
-                type="date"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Deskripsi Program</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Penjelasan umum tentang beasiswa ini..."
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Persyaratan Khusus</label>
-              <textarea
-                name="requirements"
-                value={formData.requirements}
-                onChange={handleChange}
-                rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                placeholder='["FC KTP", "Surat Miskin"]'
               />
             </div>
           </div>
-
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Kuota {!isDraftEdit && '*'}
+              </label>
+              <input
+                type="number"
+                value={form.quota}
+                onChange={(e) => setForm({ ...form, quota: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required={!isDraftEdit}
+                min="1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Deadline {!isDraftEdit && '*'}
+              </label>
+              <input
+                type="date"
+                value={form.deadline}
+                onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required={!isDraftEdit}
+              />
+              {!form.deadline && (
+                <p className="text-xs text-gray-400 mt-1">Format: dd/mm/yyyy</p>
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={3}
+            />
+          </div>
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-colors"
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Batal
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 flex items-center"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Menyimpan...
-                </>
-              ) : (
-                'Simpan Program'
-              )}
-            </button>
+
+            {isDraftEdit ? (
+              // Editing a DRAFT: Simpan sebagai Draf + Aktifkan Program
+              <>
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  disabled={saving}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Menyimpan...' : 'Simpan sebagai Draf'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleActivate}
+                  disabled={saving}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Memproses...' : 'Aktifkan Program'}
+                </button>
+              </>
+            ) : isClosedEdit ? (
+              // Editing a CLOSED program: only Simpan Perubahan (no reactivation)
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </button>
+            ) : (
+              // Creating a NEW program: Simpan sebagai Draf + Buat Program
+              <>
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  disabled={saving}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Menyimpan...' : 'Simpan sebagai Draf'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Menyimpan...' : 'Buat Program'}
+                </button>
+              </>
+            )}
           </div>
         </form>
       </div>

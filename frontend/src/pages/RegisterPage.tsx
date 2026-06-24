@@ -44,6 +44,11 @@ function RegisterPage() {
       return
     }
 
+    if (!/^[a-zA-Z\s]+$/.test(form.nama_lengkap)) {
+      setError('Nama lengkap hanya boleh berisi huruf dan spasi.')
+      return
+    }
+
     if (form.password.length < 8) {
       setError('Password minimal 8 karakter.')
       return

@@ -78,7 +78,7 @@ function SiswaSidebar({ collapsed = false, onToggle }: SiswaSidebarProps) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-white border-r border-gray-200 shadow-sm transition-all duration-300 ${
+      className={`h-screen flex flex-col bg-white border-r border-gray-200 shadow-sm transition-all duration-300 shrink-0 ${
         collapsed ? 'w-16' : 'w-60'
       }`}
     >

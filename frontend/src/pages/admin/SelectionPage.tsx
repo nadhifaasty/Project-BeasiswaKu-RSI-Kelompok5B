@@ -15,7 +15,7 @@ interface RankingItem {
   skor_ekonomi: number
   skor_prestasi: number
   skor_dokumen: number
-  status_rekomendasi: 'DITERIMA' | 'CADANGAN' | 'DITOLAK'
+  status_rekomendasi: 'DITERIMA' | 'DITOLAK'
   application_status: string
 }
 
@@ -218,8 +218,6 @@ function SelectionPage() {
     switch (recom) {
       case 'DITERIMA':
         return 'bg-green-100 text-green-800'
-      case 'CADANGAN':
-        return 'bg-purple-100 text-purple-800'
       case 'DITOLAK':
         return 'bg-red-100 text-red-800'
       default:
@@ -236,6 +234,10 @@ function SelectionPage() {
       </div>
     )
   }
+
+  const visibleRanking = isFinalized 
+    ? rankingData 
+    : rankingData.filter(item => item.application_status !== 'DITERIMA' && item.application_status !== 'DITOLAK')
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-8 space-y-8">
@@ -412,12 +414,6 @@ function SelectionPage() {
                     {programs.find((p) => p.id === selectedProgramId)?.kuota || 0} orang
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Kuota Cadangan (Est. 20%):</span>
-                  <span className="font-bold text-purple-700">
-                    {Math.max(Math.floor((programs.find((p) => p.id === selectedProgramId)?.kuota || 0) * 0.2), 2)} orang
-                  </span>
-                </div>
               </div>
             ) : (
               <p className="text-sm text-gray-400 italic">Silakan pilih program beasiswa terlebih dahulu.</p>
@@ -458,68 +454,75 @@ function SelectionPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
             <h2 className="text-lg font-bold text-primary">Tabel Hasil Perankingan Kelayakan</h2>
-            <span className="text-xs text-gray-400">Total: {rankingData.length} kandidat</span>
+            <span className="text-xs text-gray-400">Total: {visibleRanking.length} kandidat</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold uppercase text-gray-500">
-                  <th className="py-3 px-4 font-bold">Rank</th>
-                  <th className="py-3 px-4">Nama Lengkap</th>
-                  <th className="py-3 px-4">NIM/NISN</th>
-                  <th className="py-3 px-4 text-center">Skor Total</th>
-                  <th className="py-3 px-4 text-center">SA</th>
-                  <th className="py-3 px-4 text-center">SE</th>
-                  <th className="py-3 px-4 text-center">SP</th>
-                  <th className="py-3 px-4 text-center">SD</th>
-                  <th className="py-3 px-4">Rekomendasi</th>
-                  {!isFinalized && <th className="py-3 px-4 text-right">Aksi</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {rankingData.map((item) => (
-                  <tr key={item.application_id} className="hover:bg-gray-50 transition">
-                    <td className="py-3 px-4 font-bold text-primary">#{item.rank}</td>
-                    <td className="py-3 px-4 font-semibold text-gray-900">{item.full_name}</td>
-                    <td className="py-3 px-4 font-mono text-gray-500">{item.nim_nisn}</td>
-                    <td className="py-3 px-4 text-center font-bold text-emerald-600">{item.skor_total.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-center text-gray-600">{item.skor_akademik.toFixed(1)}</td>
-                    <td className="py-3 px-4 text-center text-gray-600">{item.skor_ekonomi.toFixed(1)}</td>
-                    <td className="py-3 px-4 text-center text-gray-600">{item.skor_prestasi.toFixed(1)}</td>
-                    <td className="py-3 px-4 text-center text-gray-600">{item.skor_dokumen.toFixed(1)}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${getRecommendationBadge(item.status_rekomendasi)}`}>
-                        {item.status_rekomendasi}
-                      </span>
-                    </td>
-                    {!isFinalized && (
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex gap-1.5 justify-end">
-                          <button
-                            onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITERIMA')}
-                            disabled={item.application_status === 'DITERIMA' || updatingAppId === item.application_id}
-                            title="Loloskan Utama"
-                            className="px-2.5 py-1 rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
-                          >
-                            {updatingAppId === item.application_id ? '...' : 'Lolos'}
-                          </button>
-                          <button
-                            onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITOLAK')}
-                            disabled={item.application_status === 'DITOLAK' || updatingAppId === item.application_id}
-                            title="Tolak"
-                            className="px-2.5 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
-                          >
-                            {updatingAppId === item.application_id ? '...' : 'Tolak'}
-                          </button>
-                        </div>
-                      </td>
-                    )}
+          {visibleRanking.length === 0 ? (
+            <div className="text-center py-10 text-gray-400">
+              <p className="font-semibold text-sm">Semua kandidat telah selesai diproses.</p>
+              <p className="text-xs mt-1">Silakan sahkan hasil seleksi menggunakan tombol di panel sebelah kanan atas.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold uppercase text-gray-500">
+                    <th className="py-3 px-4 font-bold">Rank</th>
+                    <th className="py-3 px-4">Nama Lengkap</th>
+                    <th className="py-3 px-4">NIM/NISN</th>
+                    <th className="py-3 px-4 text-center">Skor Total</th>
+                    <th className="py-3 px-4 text-center">SA</th>
+                    <th className="py-3 px-4 text-center">SE</th>
+                    <th className="py-3 px-4 text-center">SP</th>
+                    <th className="py-3 px-4 text-center">SD</th>
+                    <th className="py-3 px-4">Rekomendasi</th>
+                    {!isFinalized && <th className="py-3 px-4 text-right">Aksi</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {visibleRanking.map((item, index) => (
+                    <tr key={item.application_id} className="hover:bg-gray-50 transition">
+                      <td className="py-3 px-4 font-bold text-primary">#{index + 1}</td>
+                      <td className="py-3 px-4 font-semibold text-gray-900">{item.full_name}</td>
+                      <td className="py-3 px-4 font-mono text-gray-500">{item.nim_nisn}</td>
+                      <td className="py-3 px-4 text-center font-bold text-emerald-600">{item.skor_total.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-center text-gray-600">{item.skor_akademik.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center text-gray-600">{item.skor_ekonomi.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center text-gray-600">{item.skor_prestasi.toFixed(1)}</td>
+                      <td className="py-3 px-4 text-center text-gray-600">{item.skor_dokumen.toFixed(1)}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${getRecommendationBadge(item.status_rekomendasi)}`}>
+                          {item.status_rekomendasi}
+                        </span>
+                      </td>
+                      {!isFinalized && (
+                        <td className="py-3 px-4 text-right">
+                          <div className="inline-flex gap-1.5 justify-end">
+                            <button
+                              onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITERIMA')}
+                              disabled={item.application_status === 'DITERIMA' || updatingAppId === item.application_id}
+                              title="Loloskan Utama"
+                              className="px-2.5 py-1 rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
+                            >
+                              {updatingAppId === item.application_id ? '...' : 'Lolos'}
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStudentStatusDirect(item.application_id, 'DITOLAK')}
+                              disabled={item.application_status === 'DITOLAK' || updatingAppId === item.application_id}
+                              title="Tolak"
+                              className="px-2.5 py-1 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 text-xs font-bold transition flex items-center gap-1"
+                            >
+                              {updatingAppId === item.application_id ? '...' : 'Tolak'}
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       )}
 
@@ -539,7 +542,7 @@ function SelectionPage() {
             <p className="text-sm text-gray-500 leading-relaxed">
               Tindakan ini bersifat **final dan tidak dapat dibatalkan (irreversible)**. Setelah disahkan:
               <br />
-              1. Status pengajuan seluruh pendaftar akan resmi berubah menjadi **DITERIMA**, **CADANGAN**, atau **DITOLAK**.
+              1. Status pengajuan seluruh pendaftar akan resmi berubah menjadi **DITERIMA** atau **DITOLAK**.
               <br />
               2. Siswa dapat melihat pengumuman kelulusan di halaman Lacak Status masing-masing.
               <br />

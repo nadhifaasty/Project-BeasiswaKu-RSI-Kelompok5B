@@ -77,7 +77,6 @@ export const getEvaluations = async (programId?: string) => {
       REVISI: 0,
       DITOLAK: 0,
       DITERIMA: 0,
-      CADANGAN: 0,
     };
 
     let total_skor = 0;

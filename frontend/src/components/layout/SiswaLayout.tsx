@@ -21,11 +21,7 @@ function SiswaLayout() {
       />
 
       {/* Main Area */}
-      <div
-        className={`flex flex-1 flex-col transition-all duration-300 ${
-          sidebarCollapsed ? 'ml-16' : 'ml-60'
-        }`}
-      >
+      <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2 text-sm text-gray-500">

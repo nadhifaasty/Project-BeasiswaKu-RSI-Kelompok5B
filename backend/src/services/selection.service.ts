@@ -10,7 +10,7 @@ export interface SelectionRankItem {
   skor_ekonomi: number;
   skor_prestasi: number;
   skor_dokumen: number;
-  status_rekomendasi: 'DITERIMA' | 'CADANGAN' | 'DITOLAK';
+  status_rekomendasi: 'DITERIMA' | 'DITOLAK';
   application_status: string;
 }
 
@@ -158,8 +158,6 @@ class SelectionService {
     calculatedResults.sort((a, b) => b.skor_total - a.skor_total);
 
     const quota = program.kuota || 50;
-    // 20% of quota for reserve/cadangan (min 2)
-    const reserveLimit = Math.max(Math.floor(quota * 0.2), 2);
 
     const dbPayloads: any[] = [];
     const rankingList: SelectionRankItem[] = [];
@@ -169,11 +167,9 @@ class SelectionService {
       const rank = index + 1;
 
       // Assign status recommendation
-      let status_rekomendasi: 'DITERIMA' | 'CADANGAN' | 'DITOLAK' = 'DITOLAK';
+      let status_rekomendasi: 'DITERIMA' | 'DITOLAK' = 'DITOLAK';
       if (rank <= quota) {
         status_rekomendasi = 'DITERIMA';
-      } else if (rank <= quota + reserveLimit) {
-        status_rekomendasi = 'CADANGAN';
       }
 
       rankingList.push({
@@ -261,7 +257,7 @@ class SelectionService {
       skor_ekonomi: Number(r.skor_ekonomi),
       skor_prestasi: Number(r.skor_prestasi),
       skor_dokumen: Number(r.skor_dokumen),
-      status_rekomendasi: r.hasil as 'DITERIMA' | 'CADANGAN' | 'DITOLAK',
+      status_rekomendasi: r.hasil as 'DITERIMA' | 'DITOLAK',
       application_status: (r.applications as any)?.status || 'TERVERIFIKASI',
       disahkan_at: r.disahkan_at,
     }));
@@ -308,7 +304,7 @@ class SelectionService {
       throw new Error(`Gagal mengesahkan hasil: ${updResultError.message}`);
     }
 
-    // 2. Update the status of applications in bulk to match selection results ('DITERIMA', 'CADANGAN', 'DITOLAK')
+    // 2. Update the status of applications in bulk to match selection results ('DITERIMA', 'DITOLAK')
     for (const r of results) {
       const { error: updAppError } = await supabaseAdmin
         .from('applications')
@@ -321,6 +317,29 @@ class SelectionService {
       if (updAppError) {
         throw new Error(`Gagal mengupdate status pendaftar: ${updAppError.message}`);
       }
+    }
+
+    // 3. Deduct sisa_kuota of the program
+    const { data: program, error: progError } = await supabaseAdmin
+      .from('scholarship_programs')
+      .select('sisa_kuota')
+      .eq('id', programId)
+      .single();
+
+    if (progError || !program) {
+      throw new Error(`Gagal mengambil data program: ${progError?.message || 'Program tidak ditemukan.'}`);
+    }
+
+    const acceptedCount = results.filter((r) => r.hasil === 'DITERIMA').length;
+    const newSisaKuota = Math.max(0, program.sisa_kuota - acceptedCount);
+
+    const { error: updProgError } = await supabaseAdmin
+      .from('scholarship_programs')
+      .update({ sisa_kuota: newSisaKuota })
+      .eq('id', programId);
+
+    if (updProgError) {
+      throw new Error(`Gagal mengupdate sisa kuota program: ${updProgError.message}`);
     }
 
 
@@ -383,6 +402,29 @@ class SelectionService {
       if (updAppError) {
         throw new Error(`Gagal mengembalikan status pendaftar: ${updAppError.message}`);
       }
+    }
+
+    // 3. Restore sisa_kuota of the program
+    const { data: program, error: progError } = await supabaseAdmin
+      .from('scholarship_programs')
+      .select('sisa_kuota')
+      .eq('id', programId)
+      .single();
+
+    if (progError || !program) {
+      throw new Error(`Gagal mengambil data program: ${progError?.message || 'Program tidak ditemukan.'}`);
+    }
+
+    const acceptedCount = results.filter((r) => r.hasil === 'DITERIMA').length;
+    const newSisaKuota = program.sisa_kuota + acceptedCount;
+
+    const { error: updProgError } = await supabaseAdmin
+      .from('scholarship_programs')
+      .update({ sisa_kuota: newSisaKuota })
+      .eq('id', programId);
+
+    if (updProgError) {
+      throw new Error(`Gagal mengupdate sisa kuota program: ${updProgError.message}`);
     }
 
 

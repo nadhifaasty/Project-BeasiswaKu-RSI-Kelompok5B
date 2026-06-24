@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { programService } from '../services/program.service';
 import { sendSuccess, sendError } from '../utils';
-import { createProgramSchema, updateProgramSchema, updateProgramStatusSchema } from '../utils/validators';
+import { createProgramSchema, createDraftProgramSchema, updateProgramSchema, updateProgramStatusSchema } from '../utils/validators';
 import { z } from 'zod';
 import { logAudit, getProgramNameByProgramId } from '../services/audit.service';
 
-export const getPrograms = async (_req: Request, res: Response): Promise<void> => {
+export const getPrograms = async (req: Request, res: Response): Promise<void> => {
   try {
-    const data = await programService.getAllPrograms();
+    const includeDraft = req.query.include_draft === 'true';
+    const data = await programService.getAllPrograms(includeDraft);
     sendSuccess(res, data, 'Daftar program beasiswa berhasil diambil.');
   } catch (error: any) {
     sendError(res, error.message, 500);
@@ -28,20 +29,27 @@ export const getProgramById = async (req: Request, res: Response): Promise<void>
 export const createProgram = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const adminId = req.user!.userId;
-    // Validasi Zod
-    const parsedData = createProgramSchema.parse(req.body);
+    const isDraft = req.body.status === 'DRAFT';
+
+    const parsedData = isDraft
+      ? createDraftProgramSchema.parse(req.body)
+      : createProgramSchema.parse(req.body);
 
     const data = await programService.createProgram(adminId, parsedData);
 
-    // Log creation action
+    const aksi = isDraft
+      ? `CREATE_DRAFT_PROGRAM: Menyimpan draf program beasiswa: ${data.nama}`
+      : `CREATE_PROGRAM: Membuka program beasiswa baru: ${data.nama}`;
+
     await logAudit(req, {
-      aksi: `CREATE_PROGRAM: Membuka program beasiswa baru: ${data.nama}`,
+      aksi,
       resourceType: 'scholarship_programs',
       resourceId: data.nama,
-      level: 'INFO'
+      level: 'INFO',
     });
 
-    sendSuccess(res, data, 'Program beasiswa berhasil dibuat!', 201);
+    const message = isDraft ? 'Draf program beasiswa berhasil disimpan!' : 'Program beasiswa berhasil dibuat!';
+    sendSuccess(res, data, message, 201);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       const errorMessages = error.issues.map((e) => e.message).join(', ');
@@ -113,6 +121,7 @@ export const updateProgramStatus = async (req: AuthenticatedRequest, res: Respon
       sendError(res, errorMessages, 400);
       return;
     }
-    sendError(res, error.message, 500);
+    const statusCode = error.message.includes('tidak dapat diaktifkan') ? 403 : 500;
+    sendError(res, error.message, statusCode);
   }
 };

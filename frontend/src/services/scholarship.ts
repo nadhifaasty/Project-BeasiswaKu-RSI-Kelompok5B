@@ -11,6 +11,8 @@ export interface ScholarshipProgram {
   kuota: number
   sisa_kuota: number
   status: 'aktif' | 'ditutup' | 'OPEN' | 'CLOSED' | 'DRAFT'
+  applicant_count: number
+  target_level?: 'SMA' | 'PERGURUAN_TINGGI'
   created_at: string
 }
 
@@ -23,7 +25,7 @@ export interface Application {
   esai_motivasi: string
   prestasi_non_akademik: string | null
   data_akademik: any | null
-  status: 'DRAFT' | 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA' | 'CADANGAN'
+  status: 'DRAFT' | 'PENDING' | 'TERVERIFIKASI' | 'REVISI' | 'DITOLAK' | 'DITERIMA'
   skor_kelayakan: number | null
   catatan_admin: string | null
   created_at: string
@@ -55,6 +57,17 @@ export interface CreateProgramPayload {
   requirements?: any
 }
 
+export interface CreateDraftProgramPayload {
+  name?: string
+  target_level?: 'SMA' | 'PERGURUAN_TINGGI'
+  nominal?: number
+  quota?: number
+  deadline?: string
+  description?: string
+  requirements?: any
+  status: 'DRAFT'
+}
+
 interface ApiResponse<T> {
   success: boolean
   message: string
@@ -63,8 +76,9 @@ interface ApiResponse<T> {
 
 // ============ API CALLS ============
 
-export async function getPrograms(): Promise<ScholarshipProgram[]> {
-  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>('/programs')
+export async function getPrograms(includeDraft = false): Promise<ScholarshipProgram[]> {
+  const url = includeDraft ? '/programs?include_draft=true' : '/programs'
+  const res = await fetchApi<ApiResponse<ScholarshipProgram[]>>(url)
   return res.data
 }
 
@@ -107,7 +121,24 @@ export async function createProgramAdmin(payload: CreateProgramPayload): Promise
   return res.data!
 }
 
-export async function updateProgramAdmin(id: string, payload: Partial<CreateProgramPayload>): Promise<ScholarshipProgram> {
+export async function saveProgramAsDraft(payload: CreateDraftProgramPayload): Promise<ScholarshipProgram> {
+  const res = await fetchApi<ApiResponse<ScholarshipProgram>>('/programs', {
+    method: 'POST',
+    body: JSON.stringify({ ...payload, status: 'DRAFT' }),
+  })
+  return res.data!
+}
+
+interface UpdateProgramPayload {
+  name?: string
+  target_level?: 'SMA' | 'PERGURUAN_TINGGI'
+  nominal?: number
+  quota?: number
+  deadline?: string
+  description?: string
+}
+
+export async function updateProgramAdmin(id: string, payload: UpdateProgramPayload): Promise<ScholarshipProgram> {
   const res = await fetchApi<ApiResponse<ScholarshipProgram>>(`/programs/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
