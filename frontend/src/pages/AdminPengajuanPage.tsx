@@ -1076,7 +1076,6 @@ function AdminPengajuanPage() {
                   <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Siswa</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Program</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tgl Daftar</th>
-                  <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Skor Kelayakan</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
@@ -1110,20 +1109,6 @@ function AdminPengajuanPage() {
                           {new Date(app.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
-                    </td>
-                    {/* Skor Kelayakan */}
-                    <td className="px-6 py-4 text-center">
-                      {app.skor_kelayakan !== null ? (
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
-                          app.skor_kelayakan >= 85 ? 'bg-green-50 text-green-700 border-green-200' :
-                          app.skor_kelayakan >= 70 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                          'bg-red-50 text-red-700 border-red-200'
-                        }`}>
-                          {app.skor_kelayakan}/100
-                        </span>
-                      ) : (
-                        <span className="text-gray-300 text-xs">—</span>
-                      )}
                     </td>
                     {/* Status */}
                     <td className="px-6 py-4">
